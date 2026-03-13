@@ -550,6 +550,48 @@
       color: #4A3728;
     }
 
+    /* ── Impact banner ── */
+    .impact-banner {
+      background: #2C1A0E;
+      color: #F5F0E8;
+      border-radius: 16px;
+      padding: 18px 24px;
+      margin-bottom: 24px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      text-align: center;
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+    .impact-banner .ib-num {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #C9A227;
+    }
+
+    /* ── Follow-up detail ── */
+    .followup-detail {
+      margin-top: 10px;
+      border-top: 1px solid rgba(212,82,28,.2);
+      padding-top: 10px;
+    }
+    .followup-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 16px;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(212,82,28,.1);
+      font-size: 0.82rem;
+    }
+    .followup-row:last-child { border-bottom: none; }
+    .followup-row .fr-date { color: #8B3010; font-weight: 600; white-space: nowrap; }
+    .followup-row .fr-info { color: #8B3010; }
+    .followup-row .fr-reason { color: #8B3010; opacity: 0.8; font-style: italic; }
+
     @media print {
       header, .cards, .monthly-section, .payment-filter, .upload-btn, #file-input, .followup-alert, .table-card { display: none !important; }
       .payment-section { display: block !important; }
@@ -577,18 +619,30 @@
 
 <div class="main">
 
+  <!-- Impact banner -->
+  <div class="impact-banner" id="impact-banner">
+    <span>Together we reached</span>
+    <span class="ib-num" id="ib-participants">—</span>
+    <span>people across</span>
+    <span class="ib-num" id="ib-sessions">—</span>
+    <span>sessions in</span>
+    <span class="ib-num" id="ib-locations">—</span>
+    <span>locations</span>
+  </div>
+
   <!-- Follow-up alert -->
   <div class="followup-alert" id="followup-alert">
     <strong>&#9888; Follow-up needed</strong>
     <span id="followup-text"></span>
+    <div class="followup-detail" id="followup-detail"></div>
   </div>
 
   <!-- Summary cards -->
   <div class="cards">
     <div class="card"><div class="value" id="stat-sessions">—</div><div class="label">Sessions</div></div>
-    <div class="card"><div class="value" id="stat-participants">—</div><div class="label">Participants</div></div>
+    <div class="card"><div class="value" id="stat-participants">—</div><div class="label">People reached</div></div>
     <div class="card"><div class="value" id="stat-facilitators">—</div><div class="label">Facilitators</div></div>
-    <div class="card"><div class="value" id="stat-locations">—</div><div class="label">Locations</div></div>
+    <div class="card"><div class="value" id="stat-hours">—</div><div class="label">Hours delivered</div></div>
     <div class="card"><div class="value" id="stat-followup">—</div><div class="label">Follow-ups</div></div>
   </div>
 
@@ -616,6 +670,10 @@
           <div class="monthly-col-title">Drivers &amp; Distance</div>
           <div id="monthly-drivers"></div>
         </div>
+      </div>
+      <div class="monthly-col" style="border-top:1px solid #E8E0D0;margin:0">
+        <div class="monthly-col-title">Who did we reach?</div>
+        <div id="monthly-agegroups" style="display:flex;flex-wrap:wrap;gap:6px;padding-bottom:4px"></div>
       </div>
       <div class="monthly-session-list" id="monthly-session-list"></div>
     </div>
@@ -743,19 +801,46 @@ function renderStats(rows) {
     return f && f !== 'no' && f !== 'nee' && f !== '0';
   });
 
+  // Total hours delivered
+  let totalMins = 0;
+  rows.forEach(r => {
+    const m = calcDurationMinutes(r[COL.startTime], r[COL.endTime]);
+    if (m) totalMins += m;
+  });
+  const totalHours = totalMins > 0
+    ? (Math.floor(totalMins / 60) + 'h' + (totalMins % 60 > 0 ? ' ' + (totalMins % 60) + 'm' : ''))
+    : '—';
+
+  // Stat cards
   document.getElementById('stat-sessions').textContent = rows.length;
   document.getElementById('stat-participants').textContent = totalParticipants.toLocaleString();
   document.getElementById('stat-facilitators').textContent = facilitators.size;
-  document.getElementById('stat-locations').textContent = locations.size;
+  document.getElementById('stat-hours').textContent = totalHours;
   document.getElementById('stat-followup').textContent = followups.length;
 
-  const alert = document.getElementById('followup-alert');
+  // Impact banner
+  const banner = document.getElementById('impact-banner');
+  banner.style.display = 'flex';
+  document.getElementById('ib-participants').textContent = totalParticipants.toLocaleString();
+  document.getElementById('ib-sessions').textContent = rows.length;
+  document.getElementById('ib-locations').textContent = locations.size;
+
+  // Follow-up detail
+  const alertEl = document.getElementById('followup-alert');
   if (followups.length > 0) {
-    alert.style.display = 'block';
+    alertEl.style.display = 'block';
     document.getElementById('followup-text').textContent =
-      `${followups.length} session(s) have indicated follow-up / counseling may be needed.`;
+      `${followups.length} session${followups.length !== 1 ? 's' : ''} need attention:`;
+    document.getElementById('followup-detail').innerHTML = followups
+      .sort((a, b) => new Date(b[COL.date]) - new Date(a[COL.date]))
+      .map(r => `
+        <div class="followup-row">
+          <span class="fr-date">${r[COL.date] || '—'}</span>
+          <span class="fr-info">${r[COL.place] || '—'} · ${r[COL.facilitator] || '—'}</span>
+          ${r[14] ? `<span class="fr-reason">${r[14]}</span>` : ''}
+        </div>`).join('');
   } else {
-    alert.style.display = 'none';
+    alertEl.style.display = 'none';
   }
 }
 
@@ -890,30 +975,35 @@ function renderMonthDetail(rows, monthKey) {
     </div>
   `;
 
-  // Facilitators — with event type breakdown
+  // Facilitators — sorted by activity, with event type + hours
   const facMap = {};
   rows.forEach(r => {
     const f = (r[COL.facilitator] || '').trim();
     if (!f) return;
-    if (!facMap[f]) facMap[f] = {};
+    if (!facMap[f]) facMap[f] = { types: {}, mins: 0 };
     const type = eventTypeLabel(r[COL.project]);
-    facMap[f][type] = (facMap[f][type] || 0) + 1;
+    facMap[f].types[type] = (facMap[f].types[type] || 0) + 1;
+    const m = calcDurationMinutes(r[COL.startTime], r[COL.endTime]);
+    if (m) facMap[f].mins += m;
   });
   document.getElementById('monthly-facilitators').innerHTML =
-    Object.keys(facMap).sort().map(name => {
-      const types = facMap[name];
-      const total = Object.values(types).reduce((a, b) => a + b, 0);
-      const breakdown = Object.entries(types)
-        .map(([t, n]) => `<span class="type-chip">${t}: ${n}</span>`).join('');
-      return `
-        <div class="person-row" style="flex-direction:column;align-items:flex-start;gap:4px">
-          <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
-            <span class="person-row-name">${name}</span>
-            <span class="person-row-count">${total} session${total !== 1 ? 's' : ''}</span>
-          </div>
-          <div class="type-chips">${breakdown}</div>
-        </div>`;
-    }).join('') || '<p style="font-size:.82rem;color:#B0A090">No data</p>';
+    Object.keys(facMap)
+      .sort((a, b) => Object.values(facMap[b].types).reduce((x,y)=>x+y,0) - Object.values(facMap[a].types).reduce((x,y)=>x+y,0))
+      .map(name => {
+        const { types, mins } = facMap[name];
+        const total = Object.values(types).reduce((a, b) => a + b, 0);
+        const breakdown = Object.entries(types)
+          .map(([t, n]) => `<span class="type-chip">${t}: ${n}</span>`).join('');
+        const hoursStr = mins > 0 ? ` · ${formatDuration(mins)}` : '';
+        return `
+          <div class="person-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+            <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
+              <span class="person-row-name">${name}</span>
+              <span class="person-row-count">${total} session${total !== 1 ? 's' : ''}${hoursStr}</span>
+            </div>
+            <div class="type-chips">${breakdown}</div>
+          </div>`;
+      }).join('') || '<p style="font-size:.82rem;color:#B0A090">No data</p>';
 
   // Drivers — with distance category counts
   const drvMap = {};
@@ -961,6 +1051,21 @@ function renderMonthDetail(rows, monthKey) {
         </div>`;
     }).join('')}
   `;
+
+  // Age groups — who did we reach?
+  const ageMap = {};
+  rows.forEach(r => {
+    const ag = (r[COL.ageGroup] || '').trim();
+    const pax = parseInt(r[COL.participants]) || 0;
+    if (ag && pax) ageMap[ag] = (ageMap[ag] || 0) + pax;
+  });
+  document.getElementById('monthly-agegroups').innerHTML =
+    Object.keys(ageMap).length
+      ? Object.entries(ageMap)
+          .sort((a, b) => b[1] - a[1])
+          .map(([ag, n]) => `<span class="type-chip" style="background:#FDF0E8;color:#D4521C">${ag}: <strong>${n.toLocaleString()}</strong></span>`)
+          .join('')
+      : '<span style="font-size:.82rem;color:#B0A090">No age data</span>';
 
   document.getElementById('monthly-detail').style.display = 'block';
 }
