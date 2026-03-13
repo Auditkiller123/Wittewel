@@ -517,9 +517,10 @@
     <h1>Baraka · Events Dashboard</h1>
     <p id="last-updated">No data loaded yet</p>
   </div>
-  <button class="upload-btn" onclick="document.getElementById('file-input').click()">
-    &#8593; Upload CSV / TSV
-  </button>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="upload-btn" id="refresh-btn" onclick="loadFromSheets()">&#8635; Refresh data</button>
+    <button class="upload-btn" onclick="document.getElementById('file-input').click()">&#8593; Upload CSV</button>
+  </div>
   <input type="file" id="file-input" accept=".csv,.tsv,.txt" onchange="handleFile(event)" />
 </header>
 
@@ -1113,14 +1114,36 @@ function buildPersonCard(name, rows, role, crossRoleSet) {
     </div>`;
 }
 
-// ── Load demo data on first visit ───────────────────────────────────
-const DEMO = `3/1/2026 8:01:34\tnambuyaeunice2@gmail.com\tEunice\t2/28/2026\tP A G church\tBaraka 1\tAmazing You! session children\tTwo lessons amazing you introduction and private parts\t66\t13 to 15\tKnowing their self value\tYes\tThe fallout needed\tGreat session\t\t\t\t\t\t\t\t\t0-10 minutes drive\t2:30:00 PM\t4:30:00 PM
-3/1/2026 8:19:07\tnambuyaeunice2@gmail.com\tEunice\t2/23/2026\tST climates\tBaraka 1\tAmazing You! session parents\tBody parts\t62\tParents\tBeing friendly with their children\tYes\tYes\tVery positive\t\t\t\t\t\t\t\t\t10-20 minutes drive\t10:00:00 AM\t12:30:00 AM
-3/2/2026 17:54:32\tsherrydhahabu@gmail.com\tSherry\t3/2/2026\tOffice\tBaraka 1\tOffice meeting\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t10-20 minutes drive\t10:00:00 AM\t1:00:00 PM
-3/11/2026 10:44:51\tmercymasika1190@gmail.com\tMercy\t3/2/2026\tOffice\tAmos\tOffice meeting\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t10-20 minutes drive\t10:00:00 PM\t12:30:00 AM
-3/11/2026 11:20:45\tsherrydhahabu@gmail.com\tSherry\t3/11/2026\tGongoni\tBaraka 1\tAmazing You! session parents\tIntroduction to next to you\t105\t18-60\tUnderstanding adolescents\tNo\tNo\tThey really cooperated\t\t\t\t\t\t\t\t\t50-60 minutes drive\t10:00:00 AM\t12:00:00 AM`;
+// ── Google Sheets live data ──────────────────────────────────────────
+const SHEET_ID = '1qydD6FY7sJ0_w2Hwpmn5tEyIO1Duo8jSsEqA_dBCuBs';
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
 
-parseAndRender(DEMO);
+function setStatus(msg) {
+  document.getElementById('last-updated').textContent = msg;
+}
+
+async function loadFromSheets() {
+  const btn = document.getElementById('refresh-btn');
+  btn.textContent = '⏳ Loading…';
+  btn.disabled = true;
+  setStatus('Loading data from Google Sheets…');
+
+  try {
+    const res = await fetch(SHEET_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    parseAndRender(text);
+  } catch (err) {
+    setStatus('Could not load data — check that the sheet is set to "Anyone with link can view".');
+    console.error(err);
+  } finally {
+    btn.textContent = '↻ Refresh data';
+    btn.disabled = false;
+  }
+}
+
+// Auto-load on page open
+loadFromSheets();
 </script>
 </body>
 </html>
