@@ -598,9 +598,100 @@
       .payment-grid { grid-template-columns: repeat(2, 1fr); }
       .person-card { break-inside: avoid; box-shadow: none; border: 1px solid #E8E0D0; }
     }
+    /* ── Login screen ── */
+    #login-screen {
+      position: fixed;
+      inset: 0;
+      background: #EDEAE0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 24px;
+    }
+
+    .login-box {
+      background: #FAF8F3;
+      border: 1px solid #E8E0D0;
+      border-radius: 20px;
+      padding: 36px 32px;
+      max-width: 380px;
+      width: 100%;
+      box-shadow: 0 8px 32px rgba(44,26,14,.12);
+      text-align: center;
+    }
+
+    .login-org {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #2C1A0E;
+      margin-bottom: 4px;
+    }
+
+    .login-sub {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: #D4521C;
+      margin-bottom: 28px;
+    }
+
+    .login-box input[type="password"] {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid #D9D0C0;
+      border-radius: 12px;
+      font-size: 1rem;
+      background: #EDEAE0;
+      color: #2C1A0E;
+      text-align: center;
+      letter-spacing: .1em;
+      outline: none;
+      margin-bottom: 14px;
+    }
+
+    .login-box input[type="password"]:focus {
+      border-color: #D4521C;
+    }
+
+    .login-submit {
+      width: 100%;
+      padding: 12px;
+      background: #C9A227;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: .01em;
+    }
+
+    .login-submit:hover { background: #B8911F; }
+
+    .login-error {
+      color: #D4521C;
+      font-size: 0.82rem;
+      margin-top: 10px;
+      min-height: 20px;
+    }
   </style>
 </head>
 <body>
+
+<!-- Login screen -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-org">A Smile from Kenya</div>
+    <div class="login-sub">Events Dashboard</div>
+    <input type="password" id="pwd-input" placeholder="Enter password"
+      onkeydown="if(event.key==='Enter') checkPassword()" />
+    <button class="login-submit" onclick="checkPassword()">Open dashboard</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
 
 <header>
   <div class="header-top">
@@ -1332,8 +1423,33 @@ async function loadFromSheets() {
   }
 }
 
-// Auto-load on page open
-loadFromSheets();
+// ── Login ────────────────────────────────────────────────────────────
+const PWD_HASH = 'f481f061bdee8193786a311a127dededf647152472c87b79ccf3d55a465c9945';
+
+async function hashPassword(pwd) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pwd));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function checkPassword() {
+  const input = document.getElementById('pwd-input').value;
+  const hash = await hashPassword(input);
+  if (hash === PWD_HASH) {
+    document.getElementById('login-screen').style.display = 'none';
+    sessionStorage.setItem('asfk_auth', '1');
+    loadFromSheets();
+  } else {
+    document.getElementById('login-error').textContent = 'Incorrect password. Try again.';
+    document.getElementById('pwd-input').value = '';
+    document.getElementById('pwd-input').focus();
+  }
+}
+
+// Auto-load on page open — only if already authenticated
+if (sessionStorage.getItem('asfk_auth') === '1') {
+  document.getElementById('login-screen').style.display = 'none';
+  loadFromSheets();
+}
 </script>
 </body>
 </html>
