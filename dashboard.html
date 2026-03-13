@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Events Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f0f4f8;
+      color: #2d3748;
+    }
+
+    header {
+      background: #2b6cb0;
+      color: white;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    header h1 { font-size: 1.4rem; font-weight: 700; }
+    header p { font-size: 0.85rem; opacity: 0.85; margin-top: 2px; }
+
+    .upload-btn {
+      background: white;
+      color: #2b6cb0;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .upload-btn:hover { background: #ebf8ff; }
+
+    #file-input { display: none; }
+
+    .main { padding: 20px; max-width: 1100px; margin: 0 auto; }
+
+    /* ── Summary cards ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      text-align: center;
+    }
+
+    .card .value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2b6cb0;
+    }
+
+    .card .label {
+      font-size: 0.78rem;
+      color: #718096;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    /* ── Charts ── */
+    .charts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .chart-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+
+    .chart-card h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 14px;
+    }
+
+    .chart-wrap { position: relative; height: 220px; }
+
+    /* ── Table ── */
+    .table-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      overflow-x: auto;
+    }
+
+    .table-card h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    th {
+      text-align: left;
+      padding: 8px 10px;
+      background: #edf2f7;
+      color: #4a5568;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f7fafc; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-blue  { background: #bee3f8; color: #2b6cb0; }
+    .badge-green { background: #c6f6d5; color: #276749; }
+    .badge-orange{ background: #feebc8; color: #c05621; }
+    .badge-gray  { background: #e2e8f0; color: #4a5568; }
+
+    /* ── Empty state ── */
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: #a0aec0;
+    }
+
+    .empty .icon { font-size: 3rem; margin-bottom: 12px; }
+    .empty p { font-size: 1rem; }
+    .empty small { font-size: 0.85rem; margin-top: 6px; display: block; }
+
+    /* ── Follow-up alert ── */
+    .followup-alert {
+      background: #fff5f5;
+      border-left: 4px solid #fc8181;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 24px;
+      font-size: 0.9rem;
+      color: #c53030;
+      display: none;
+    }
+
+    .followup-alert strong { display: block; margin-bottom: 4px; }
+
+    /* ── Payment Summary ── */
+    .payment-section { margin-bottom: 24px; }
+
+    .payment-header { margin-bottom: 14px; }
+    .payment-header h2 { font-size: 1.1rem; font-weight: 700; color: #2d3748; }
+    .payment-subtitle { font-size: 0.82rem; color: #718096; margin-top: 3px; }
+
+    .payment-filter {
+      background: white;
+      border-radius: 12px;
+      padding: 14px 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      margin-bottom: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .filter-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .filter-btn {
+      padding: 5px 13px;
+      border-radius: 999px;
+      border: 1.5px solid #cbd5e0;
+      background: white;
+      color: #4a5568;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .filter-btn:hover { border-color: #2b6cb0; color: #2b6cb0; }
+    .filter-btn.active { background: #2b6cb0; border-color: #2b6cb0; color: white; font-weight: 600; }
+
+    .filter-custom {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.84rem;
+      color: #4a5568;
+    }
+    .filter-custom input[type="date"] {
+      border: 1.5px solid #cbd5e0;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 0.84rem;
+      color: #2d3748;
+    }
+    .filter-apply-btn {
+      padding: 4px 12px;
+      background: #2b6cb0;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .filter-apply-btn:hover { background: #2c5282; }
+
+    .filter-period-label { font-size: 0.8rem; color: #718096; font-style: italic; margin-left: auto; }
+
+    .payment-role-block { margin-bottom: 20px; }
+    .role-heading {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: #718096;
+      margin-bottom: 10px;
+      padding-left: 2px;
+    }
+
+    .payment-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .person-card { background: white; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow: hidden; }
+
+    .person-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid #edf2f7;
+    }
+    .person-name { font-size: 1rem; font-weight: 700; color: #2d3748; }
+    .person-also-badge {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #feebc8;
+      color: #c05621;
+      margin-top: 3px;
+    }
+
+    .session-count-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #ebf8ff;
+      border-radius: 8px;
+      padding: 6px 12px;
+      min-width: 56px;
+    }
+    .session-count-pill .count-num { font-size: 1.5rem; font-weight: 800; color: #2b6cb0; line-height: 1; }
+    .session-count-pill .count-lbl { font-size: 0.65rem; color: #4299e1; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+
+    .session-row {
+      display: grid;
+      grid-template-columns: 90px 1fr auto;
+      gap: 6px;
+      padding: 7px 16px;
+      border-bottom: 1px solid #f7fafc;
+      font-size: 0.8rem;
+      align-items: start;
+    }
+    .session-row:last-child { border-bottom: none; }
+    .session-date { color: #718096; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .session-place { color: #2d3748; font-weight: 500; }
+    .session-meta { font-size: 0.74rem; color: #a0aec0; margin-top: 1px; }
+    .session-participants { text-align: right; white-space: nowrap; font-weight: 700; color: #4a5568; }
+    .session-duration { font-size: 0.72rem; color: #a0aec0; text-align: right; }
+
+    .person-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 16px 12px;
+      border-top: 1px solid #edf2f7;
+      font-size: 0.8rem;
+      color: #718096;
+    }
+    .person-card-footer strong { color: #2d3748; }
+
+    .no-sessions-msg { padding: 18px 16px; font-size: 0.84rem; color: #a0aec0; text-align: center; }
+
+    @media print {
+      header, .cards, .charts, .payment-filter, .upload-btn, #file-input, .followup-alert, .table-card { display: none !important; }
+      .payment-section { display: block !important; }
+      .payment-grid { grid-template-columns: repeat(2, 1fr); }
+      .person-card { break-inside: avoid; box-shadow: none; border: 1px solid #e2e8f0; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Events Dashboard</h1>
+    <p id="last-updated">No data loaded yet</p>
+  </div>
+  <button class="upload-btn" onclick="document.getElementById('file-input').click()">
+    &#8593; Upload CSV / TSV
+  </button>
+  <input type="file" id="file-input" accept=".csv,.tsv,.txt" onchange="handleFile(event)" />
+</header>
+
+<div class="main">
+
+  <!-- Follow-up alert -->
+  <div class="followup-alert" id="followup-alert">
+    <strong>&#9888; Follow-up needed</strong>
+    <span id="followup-text"></span>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="cards">
+    <div class="card"><div class="value" id="stat-sessions">—</div><div class="label">Sessions</div></div>
+    <div class="card"><div class="value" id="stat-participants">—</div><div class="label">Participants</div></div>
+    <div class="card"><div class="value" id="stat-facilitators">—</div><div class="label">Facilitators</div></div>
+    <div class="card"><div class="value" id="stat-locations">—</div><div class="label">Locations</div></div>
+    <div class="card"><div class="value" id="stat-followup">—</div><div class="label">Follow-ups</div></div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts">
+    <div class="chart-card">
+      <h2>Sessions by Type</h2>
+      <div class="chart-wrap"><canvas id="chart-type"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h2>Participants per Session</h2>
+      <div class="chart-wrap"><canvas id="chart-participants"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h2>Sessions by Facilitator</h2>
+      <div class="chart-wrap"><canvas id="chart-facilitator"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h2>Distance from Malindi</h2>
+      <div class="chart-wrap"><canvas id="chart-distance"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Payment Summary -->
+  <div class="payment-section" id="payment-section" style="display:none">
+
+    <div class="payment-header">
+      <h2>Payment Summary</h2>
+      <p class="payment-subtitle">Session counts per person for the selected period. Use this to verify and approve payments.</p>
+    </div>
+
+    <div class="payment-filter" id="payment-filter">
+      <div class="filter-presets">
+        <button class="filter-btn active" data-preset="all">All time</button>
+        <button class="filter-btn" data-preset="this-month">This month</button>
+        <button class="filter-btn" data-preset="last-month">Last month</button>
+        <button class="filter-btn" data-preset="custom">Custom range</button>
+      </div>
+      <div class="filter-custom" id="filter-custom" style="display:none">
+        <label>From <input type="date" id="filter-from" /></label>
+        <label>To <input type="date" id="filter-to" /></label>
+        <button class="filter-apply-btn" onclick="applyCustomFilter()">Apply</button>
+      </div>
+      <div class="filter-period-label" id="filter-period-label"></div>
+    </div>
+
+    <div class="payment-role-block">
+      <h3 class="role-heading">Facilitators</h3>
+      <div class="payment-grid" id="payment-facilitators"></div>
+    </div>
+
+    <div class="payment-role-block">
+      <h3 class="role-heading">Drivers</h3>
+      <div class="payment-grid" id="payment-drivers"></div>
+    </div>
+
+  </div>
+
+  <!-- Recent sessions table -->
+  <div class="table-card">
+    <h2>All Sessions</h2>
+    <div id="table-container">
+      <div class="empty">
+        <div class="icon">📋</div>
+        <p>No data loaded yet</p>
+        <small>Export your Google Sheet as CSV (File → Download → CSV) and upload it above.</small>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Column indices (0-based, matching your sheet) ──────────────────
+const COL = {
+  timestamp:    0,
+  email:        1,
+  facilitator:  2,
+  date:         3,
+  place:        4,
+  driver:       5,
+  project:      6,
+  topics:       7,
+  participants: 8,
+  ageGroup:     9,
+  learned:      10,
+  questions:    11,
+  followup:     12,
+  comments:     13,
+  distance:     22,
+  startTime:    23,
+  endTime:      24,
+};
+
+let charts = {};
+let allRows = [];
+let activeFilter = { preset: 'all', from: null, to: null };
+
+function handleFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => parseAndRender(e.target.result);
+  reader.readAsText(file);
+}
+
+function parseAndRender(raw) {
+  // Auto-detect separator (tab or comma)
+  const sep = raw.includes('\t') ? '\t' : ',';
+  const lines = raw.trim().split('\n').map(l => l.split(sep).map(c => c.trim().replace(/^"|"$/g, '')));
+
+  // Skip header row(s): detect by checking if first column looks like a date/timestamp
+  const rows = lines.filter(r => {
+    const first = r[COL.timestamp] || '';
+    return /\d{1,2}\/\d{1,2}\/\d{4}/.test(first);
+  });
+
+  if (rows.length === 0) {
+    alert('No data rows found. Make sure the file is a CSV or TSV export from your Google Sheet.');
+    return;
+  }
+
+  allRows = rows;
+  renderStats(rows);
+  renderCharts(rows);
+  renderTable(rows);
+  renderPaymentFilter();
+  renderPaymentSummary(rows);
+  document.getElementById('payment-section').style.display = 'block';
+
+  document.getElementById('last-updated').textContent =
+    `${rows.length} sessions loaded · Updated ${new Date().toLocaleString()}`;
+}
+
+// ── Stats ────────────────────────────────────────────────────────────
+function renderStats(rows) {
+  const totalParticipants = rows.reduce((s, r) => s + (parseInt(r[COL.participants]) || 0), 0);
+  const facilitators = new Set(rows.map(r => r[COL.facilitator]).filter(Boolean));
+  const locations = new Set(rows.map(r => r[COL.place]).filter(Boolean));
+  const followups = rows.filter(r => {
+    const f = (r[COL.followup] || '').toLowerCase();
+    return f && f !== 'no' && f !== 'nee' && f !== '0';
+  });
+
+  document.getElementById('stat-sessions').textContent = rows.length;
+  document.getElementById('stat-participants').textContent = totalParticipants.toLocaleString();
+  document.getElementById('stat-facilitators').textContent = facilitators.size;
+  document.getElementById('stat-locations').textContent = locations.size;
+  document.getElementById('stat-followup').textContent = followups.length;
+
+  const alert = document.getElementById('followup-alert');
+  if (followups.length > 0) {
+    alert.style.display = 'block';
+    document.getElementById('followup-text').textContent =
+      `${followups.length} session(s) have indicated follow-up / counseling may be needed.`;
+  } else {
+    alert.style.display = 'none';
+  }
+}
+
+// ── Charts ───────────────────────────────────────────────────────────
+const COLORS = ['#4299e1','#48bb78','#ed8936','#9f7aea','#f56565','#38b2ac','#667eea','#f6ad55'];
+
+function count(rows, colIndex) {
+  const map = {};
+  rows.forEach(r => {
+    const key = r[colIndex] || 'Unknown';
+    map[key] = (map[key] || 0) + 1;
+  });
+  return map;
+}
+
+function makeChart(id, type, labels, data, options = {}) {
+  if (charts[id]) charts[id].destroy();
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx, {
+    type,
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: COLORS,
+        borderColor: type === 'line' ? COLORS[0] : COLORS,
+        borderWidth: type === 'bar' ? 0 : 2,
+        fill: false,
+        tension: 0.3,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: type === 'doughnut', position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+      },
+      scales: type !== 'doughnut' ? {
+        y: { beginAtZero: true, ticks: { font: { size: 11 } } },
+        x: { ticks: { font: { size: 11 } } }
+      } : {},
+      ...options
+    }
+  });
+}
+
+function renderCharts(rows) {
+  // Sessions by project type
+  const byType = count(rows, COL.project);
+  makeChart('chart-type', 'doughnut', Object.keys(byType), Object.values(byType));
+
+  // Participants per session (bar)
+  const sessionLabels = rows.map((r, i) => {
+    const d = r[COL.date] || '';
+    const place = r[COL.place] || `#${i+1}`;
+    return `${d} ${place}`.substring(0, 20);
+  });
+  const participantData = rows.map(r => parseInt(r[COL.participants]) || 0);
+  makeChart('chart-participants', 'bar', sessionLabels, participantData);
+
+  // Sessions by facilitator
+  const byFacilitator = count(rows, COL.facilitator);
+  makeChart('chart-facilitator', 'bar', Object.keys(byFacilitator), Object.values(byFacilitator));
+
+  // Distance distribution
+  const byDistance = count(rows, COL.distance);
+  makeChart('chart-distance', 'bar', Object.keys(byDistance), Object.values(byDistance));
+}
+
+// ── Table ────────────────────────────────────────────────────────────
+function projectBadge(project) {
+  const p = (project || '').toLowerCase();
+  if (p.includes('children')) return `<span class="badge badge-blue">${project}</span>`;
+  if (p.includes('parent'))   return `<span class="badge badge-green">${project}</span>`;
+  if (p.includes('office'))   return `<span class="badge badge-gray">${project}</span>`;
+  if (p.includes('ttt') || p.includes('teacher')) return `<span class="badge badge-orange">${project}</span>`;
+  return `<span class="badge badge-gray">${project || '—'}</span>`;
+}
+
+function followupBadge(val) {
+  const v = (val || '').toLowerCase();
+  if (!v || v === 'no' || v === 'nee' || v === '0') return '<span style="color:#a0aec0">No</span>';
+  return `<span class="badge badge-orange">&#9888; Yes</span>`;
+}
+
+function renderTable(rows) {
+  const container = document.getElementById('table-container');
+  const sorted = [...rows].sort((a, b) => new Date(b[COL.date]) - new Date(a[COL.date]));
+
+  const html = `
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Facilitator</th>
+          <th>Place</th>
+          <th>Project / Event</th>
+          <th>Topics</th>
+          <th>Participants</th>
+          <th>Age Group</th>
+          <th>Follow-up?</th>
+          <th>Distance</th>
+          <th>Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${sorted.map(r => `
+          <tr>
+            <td style="white-space:nowrap">${r[COL.date] || '—'}</td>
+            <td>${r[COL.facilitator] || '—'}</td>
+            <td>${r[COL.place] || '—'}</td>
+            <td>${projectBadge(r[COL.project])}</td>
+            <td style="max-width:180px">${r[COL.topics] || '—'}</td>
+            <td style="text-align:center"><strong>${r[COL.participants] || '—'}</strong></td>
+            <td>${r[COL.ageGroup] || '—'}</td>
+            <td>${followupBadge(r[COL.followup])}</td>
+            <td style="white-space:nowrap">${r[COL.distance] || '—'}</td>
+            <td style="white-space:nowrap">${r[COL.startTime] || '—'} – ${r[COL.endTime] || '—'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+  container.innerHTML = html;
+}
+
+// ── Payment: date filter ─────────────────────────────────────────────
+function getFilteredRows() {
+  if (activeFilter.preset === 'all') return allRows;
+
+  let from, to;
+  if (activeFilter.preset === 'this-month') {
+    const n = new Date();
+    from = new Date(n.getFullYear(), n.getMonth(), 1);
+    to   = new Date(n.getFullYear(), n.getMonth() + 1, 0);
+  } else if (activeFilter.preset === 'last-month') {
+    const n = new Date();
+    from = new Date(n.getFullYear(), n.getMonth() - 1, 1);
+    to   = new Date(n.getFullYear(), n.getMonth(), 0);
+  } else if (activeFilter.preset === 'custom') {
+    from = activeFilter.from ? new Date(activeFilter.from) : null;
+    to   = activeFilter.to   ? new Date(activeFilter.to)   : null;
+  }
+
+  return allRows.filter(r => {
+    const d = new Date(r[COL.date]);
+    if (isNaN(d)) return false;
+    if (from && d < from) return false;
+    if (to   && d > to)   return false;
+    return true;
+  });
+}
+
+function formatFilterLabel() {
+  const p = activeFilter.preset;
+  if (p === 'all') return 'Showing all sessions';
+  if (p === 'this-month') return 'Showing: ' + new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+  if (p === 'last-month') {
+    const d = new Date(); d.setMonth(d.getMonth() - 1);
+    return 'Showing: ' + d.toLocaleString('default', { month: 'long', year: 'numeric' });
+  }
+  if (p === 'custom') return `Showing: ${activeFilter.from || '?'} to ${activeFilter.to || '?'}`;
+  return '';
+}
+
+function renderPaymentFilter() {
+  document.querySelectorAll('.filter-btn[data-preset]').forEach(btn => {
+    // Clone to remove any previously attached listeners on re-upload
+    const fresh = btn.cloneNode(true);
+    btn.parentNode.replaceChild(fresh, btn);
+    fresh.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      fresh.classList.add('active');
+      activeFilter.preset = fresh.dataset.preset;
+      document.getElementById('filter-custom').style.display =
+        activeFilter.preset === 'custom' ? 'flex' : 'none';
+      if (activeFilter.preset !== 'custom') {
+        activeFilter.from = null;
+        activeFilter.to   = null;
+        refreshPaymentView();
+      }
+    });
+  });
+}
+
+function applyCustomFilter() {
+  activeFilter.from = document.getElementById('filter-from').value || null;
+  activeFilter.to   = document.getElementById('filter-to').value   || null;
+  refreshPaymentView();
+}
+
+function refreshPaymentView() {
+  const filtered = getFilteredRows();
+  renderPaymentSummary(filtered);
+  document.getElementById('filter-period-label').textContent = formatFilterLabel();
+}
+
+// ── Payment: duration helpers ────────────────────────────────────────
+function calcDurationMinutes(startStr, endStr) {
+  if (!startStr || !endStr) return null;
+  const parse = str => {
+    const m = str.match(/(\d+):(\d+)(?::\d+)?\s*(AM|PM)?/i);
+    if (!m) return null;
+    let h = parseInt(m[1]), min = parseInt(m[2]);
+    const ampm = (m[3] || '').toUpperCase();
+    if (ampm === 'PM' && h !== 12) h += 12;
+    if (ampm === 'AM' && h === 12) h = 0;
+    return h * 60 + min;
+  };
+  const s = parse(startStr), e = parse(endStr);
+  if (s === null || e === null) return null;
+  const diff = e - s;
+  return diff > 0 ? diff : null; // guard against data-entry errors
+}
+
+function formatDuration(minutes) {
+  if (minutes === null) return null;
+  const h = Math.floor(minutes / 60), m = minutes % 60;
+  return h > 0 ? `${h}h${m > 0 ? ' ' + m + 'm' : ''}` : `${m}m`;
+}
+
+// ── Payment: render cards ────────────────────────────────────────────
+function renderPaymentSummary(rows) {
+  const facilitatorMap = {}, driverMap = {};
+  const allFacilitators = new Set(allRows.map(r => r[COL.facilitator]).filter(Boolean));
+  const allDrivers      = new Set(allRows.map(r => r[COL.driver]).filter(Boolean));
+
+  rows.forEach(r => {
+    const f = (r[COL.facilitator] || '').trim();
+    const d = (r[COL.driver]      || '').trim();
+    if (f) { if (!facilitatorMap[f]) facilitatorMap[f] = []; facilitatorMap[f].push(r); }
+    if (d) { if (!driverMap[d])      driverMap[d]      = []; driverMap[d].push(r); }
+  });
+
+  document.getElementById('payment-facilitators').innerHTML =
+    buildPersonCards(facilitatorMap, 'facilitator', allDrivers);
+  document.getElementById('payment-drivers').innerHTML =
+    buildPersonCards(driverMap, 'driver', allFacilitators);
+
+  document.getElementById('filter-period-label').textContent = formatFilterLabel();
+}
+
+function buildPersonCards(personMap, role, crossRoleSet) {
+  const names = Object.keys(personMap).sort();
+  if (names.length === 0)
+    return `<p class="no-sessions-msg">No ${role}s found in the selected period.</p>`;
+  return names.map(n => buildPersonCard(n, personMap[n], role, crossRoleSet)).join('');
+}
+
+function buildPersonCard(name, rows, role, crossRoleSet) {
+  const sorted = [...rows].sort((a, b) => new Date(a[COL.date]) - new Date(b[COL.date]));
+  const totalParticipants = sorted.reduce((s, r) => s + (parseInt(r[COL.participants]) || 0), 0);
+
+  let totalMinutes = 0, hasDuration = false;
+  sorted.forEach(r => {
+    const mins = calcDurationMinutes(r[COL.startTime], r[COL.endTime]);
+    if (mins !== null) { totalMinutes += mins; hasDuration = true; }
+  });
+
+  const alsoBadge = crossRoleSet.has(name)
+    ? `<span class="person-also-badge">also ${role === 'facilitator' ? 'drives' : 'facilitates'}</span>`
+    : '';
+
+  const sessionRows = sorted.map(r => {
+    const mins = calcDurationMinutes(r[COL.startTime], r[COL.endTime]);
+    const pax  = parseInt(r[COL.participants]);
+    return `
+      <div class="session-row">
+        <span class="session-date">${r[COL.date] || '—'}</span>
+        <span>
+          <div class="session-place">${r[COL.place] || '—'}</div>
+          <div class="session-meta">${r[COL.project] || '—'}</div>
+        </span>
+        <span>
+          <div class="session-participants">${!isNaN(pax) ? pax + ' pax' : '—'}</div>
+          <div class="session-duration">${mins !== null ? formatDuration(mins) : ''}</div>
+        </span>
+      </div>`;
+  }).join('');
+
+  const footer = `
+    <div class="person-card-footer">
+      <span>Total participants: <strong>${totalParticipants.toLocaleString()}</strong></span>
+      ${hasDuration ? `<span>Total time: <strong>${formatDuration(totalMinutes)}</strong></span>` : ''}
+    </div>`;
+
+  return `
+    <div class="person-card">
+      <div class="person-card-header">
+        <div>
+          <div class="person-name">${name}</div>
+          ${alsoBadge}
+        </div>
+        <div class="session-count-pill">
+          <span class="count-num">${sorted.length}</span>
+          <span class="count-lbl">session${sorted.length !== 1 ? 's' : ''}</span>
+        </div>
+      </div>
+      <div class="person-sessions">${sessionRows}</div>
+      ${footer}
+    </div>`;
+}
+
+// ── Load demo data on first visit ───────────────────────────────────
+const DEMO = `3/1/2026 8:01:34\tnambuyaeunice2@gmail.com\tEunice\t2/28/2026\tP A G church\tBaraka 1\tAmazing You! session children\tTwo lessons amazing you introduction and private parts\t66\t13 to 15\tKnowing their self value\tYes\tThe fallout needed\tGreat session\t\t\t\t\t\t\t\t\t0-10 minutes drive\t2:30:00 PM\t4:30:00 PM
+3/1/2026 8:19:07\tnambuyaeunice2@gmail.com\tEunice\t2/23/2026\tST climates\tBaraka 1\tAmazing You! session parents\tBody parts\t62\tParents\tBeing friendly with their children\tYes\tYes\tVery positive\t\t\t\t\t\t\t\t\t10-20 minutes drive\t10:00:00 AM\t12:30:00 AM
+3/2/2026 17:54:32\tsherrydhahabu@gmail.com\tSherry\t3/2/2026\tOffice\tBaraka 1\tOffice meeting\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t10-20 minutes drive\t10:00:00 AM\t1:00:00 PM
+3/11/2026 10:44:51\tmercymasika1190@gmail.com\tMercy\t3/2/2026\tOffice\tAmos\tOffice meeting\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t10-20 minutes drive\t10:00:00 PM\t12:30:00 AM
+3/11/2026 11:20:45\tsherrydhahabu@gmail.com\tSherry\t3/11/2026\tGongoni\tBaraka 1\tAmazing You! session parents\tIntroduction to next to you\t105\t18-60\tUnderstanding adolescents\tNo\tNo\tThey really cooperated\t\t\t\t\t\t\t\t\t50-60 minutes drive\t10:00:00 AM\t12:00:00 AM`;
+
+parseAndRender(DEMO);
+</script>
+</body>
+</html>
