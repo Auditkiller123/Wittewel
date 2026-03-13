@@ -3,48 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Events Dashboard</title>
+  <title>Events Dashboard — Baraka</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f0f4f8;
-      color: #2d3748;
+      background: #F5F0E8;
+      color: #1C1C1E;
     }
 
     header {
-      background: #2b6cb0;
+      background: linear-gradient(135deg, #8B1A1A 0%, #6B1414 100%);
       color: white;
-      padding: 20px 24px;
+      padding: 22px 28px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
       gap: 12px;
+      border-bottom: 3px solid #1B5E35;
     }
 
-    header h1 { font-size: 1.4rem; font-weight: 700; }
-    header p { font-size: 0.85rem; opacity: 0.85; margin-top: 2px; }
+    header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+    header p { font-size: 0.85rem; opacity: 0.8; margin-top: 3px; }
 
     .upload-btn {
       background: white;
-      color: #2b6cb0;
+      color: #8B1A1A;
       border: none;
-      padding: 8px 16px;
-      border-radius: 8px;
+      padding: 9px 18px;
+      border-radius: 20px;
       font-weight: 600;
       cursor: pointer;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       white-space: nowrap;
+      letter-spacing: -0.01em;
     }
 
-    .upload-btn:hover { background: #ebf8ff; }
+    .upload-btn:hover { background: #FFF5F5; }
 
     #file-input { display: none; }
 
-    .main { padding: 20px; max-width: 1100px; margin: 0 auto; }
+    .main { padding: 24px; max-width: 1100px; margin: 0 auto; }
 
     /* ── Summary cards ── */
     .cards {
@@ -56,24 +58,26 @@
 
     .card {
       background: white;
-      border-radius: 12px;
-      padding: 18px;
-      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(139,26,26,.07);
       text-align: center;
     }
 
     .card .value {
-      font-size: 2rem;
+      font-size: 2.2rem;
       font-weight: 700;
-      color: #2b6cb0;
+      color: #8B1A1A;
+      letter-spacing: -0.03em;
     }
 
     .card .label {
-      font-size: 0.78rem;
-      color: #718096;
-      margin-top: 4px;
+      font-size: 0.75rem;
+      color: #6E6E73;
+      margin-top: 5px;
       text-transform: uppercase;
-      letter-spacing: .03em;
+      letter-spacing: .06em;
+      font-weight: 500;
     }
 
     /* ── Charts ── */
@@ -86,16 +90,18 @@
 
     .chart-card {
       background: white;
-      border-radius: 12px;
+      border-radius: 16px;
       padding: 20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      box-shadow: 0 2px 8px rgba(139,26,26,.07);
     }
 
     .chart-card h2 {
-      font-size: 0.95rem;
+      font-size: 0.88rem;
       font-weight: 600;
-      color: #4a5568;
+      color: #6E6E73;
       margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
     }
 
     .chart-wrap { position: relative; height: 220px; }
@@ -103,17 +109,19 @@
     /* ── Table ── */
     .table-card {
       background: white;
-      border-radius: 12px;
+      border-radius: 16px;
       padding: 20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      box-shadow: 0 2px 8px rgba(139,26,26,.07);
       overflow-x: auto;
     }
 
     .table-card h2 {
-      font-size: 0.95rem;
+      font-size: 0.88rem;
       font-weight: 600;
-      color: #4a5568;
+      color: #6E6E73;
       margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
     }
 
     table {
@@ -124,40 +132,44 @@
 
     th {
       text-align: left;
-      padding: 8px 10px;
-      background: #edf2f7;
-      color: #4a5568;
+      padding: 9px 10px;
+      background: #F5EFE6;
+      color: #4A3728;
       font-weight: 600;
       white-space: nowrap;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
     }
 
     td {
-      padding: 8px 10px;
-      border-bottom: 1px solid #e2e8f0;
+      padding: 9px 10px;
+      border-bottom: 1px solid #F0E8DB;
       vertical-align: top;
+      color: #1C1C1E;
     }
 
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #f7fafc; }
+    tr:hover td { background: #FDF8F3; }
 
     .badge {
       display: inline-block;
-      padding: 2px 8px;
+      padding: 3px 9px;
       border-radius: 999px;
-      font-size: 0.75rem;
+      font-size: 0.73rem;
       font-weight: 600;
     }
 
-    .badge-blue  { background: #bee3f8; color: #2b6cb0; }
-    .badge-green { background: #c6f6d5; color: #276749; }
-    .badge-orange{ background: #feebc8; color: #c05621; }
-    .badge-gray  { background: #e2e8f0; color: #4a5568; }
+    .badge-blue  { background: #D4EDDA; color: #1B5E35; }
+    .badge-green { background: #C8E6D0; color: #145228; }
+    .badge-orange{ background: #FDEBD0; color: #7D4E0F; }
+    .badge-gray  { background: #EDE8E0; color: #4A3728; }
 
     /* ── Empty state ── */
     .empty {
       text-align: center;
       padding: 60px 20px;
-      color: #a0aec0;
+      color: #AEAEB2;
     }
 
     .empty .icon { font-size: 3rem; margin-bottom: 12px; }
@@ -166,30 +178,198 @@
 
     /* ── Follow-up alert ── */
     .followup-alert {
-      background: #fff5f5;
-      border-left: 4px solid #fc8181;
-      border-radius: 8px;
-      padding: 12px 16px;
+      background: #FEF0ED;
+      border-left: 4px solid #C0392B;
+      border-radius: 12px;
+      padding: 13px 18px;
       margin-bottom: 24px;
       font-size: 0.9rem;
-      color: #c53030;
+      color: #8B1A1A;
       display: none;
     }
 
     .followup-alert strong { display: block; margin-bottom: 4px; }
 
+    /* ── Monthly Overview ── */
+    .monthly-section { margin-bottom: 24px; display: flex; flex-direction: column; gap: 16px; }
+
+    .monthly-trend-card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(139,26,26,.07);
+    }
+    .monthly-trend-card h2 {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #6E6E73;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .month-selector-wrap {
+      background: white;
+      border-radius: 16px;
+      padding: 16px 18px;
+      box-shadow: 0 2px 8px rgba(139,26,26,.07);
+    }
+    .month-selector-label {
+      font-size: 0.78rem;
+      color: #6E6E73;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .month-selector { display: flex; flex-wrap: wrap; gap: 6px; }
+    .month-btn {
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1.5px solid #D9CFC4;
+      background: white;
+      color: #4A3728;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .month-btn:hover { border-color: #8B1A1A; color: #8B1A1A; }
+    .month-btn.active { background: #8B1A1A; border-color: #8B1A1A; color: white; font-weight: 600; }
+
+    .monthly-detail {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(139,26,26,.07);
+      overflow: hidden;
+    }
+    .monthly-detail-header {
+      background: linear-gradient(135deg, #8B1A1A, #6B1414);
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: center;
+    }
+    .monthly-detail-header .mh-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .monthly-detail-header .mh-stats {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .mh-stat { display: flex; flex-direction: column; align-items: center; }
+    .mh-stat .mh-num { font-size: 1.6rem; font-weight: 800; line-height: 1; letter-spacing: -0.03em; }
+    .mh-stat .mh-lbl { font-size: 0.65rem; opacity: 0.8; text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+
+    .monthly-detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border-bottom: 1px solid #F0E8DB;
+    }
+    @media (max-width: 540px) { .monthly-detail-grid { grid-template-columns: 1fr; } }
+
+    .monthly-col { padding: 16px 18px; }
+    .monthly-col:first-child { border-right: 1px solid #F0E8DB; }
+    @media (max-width: 540px) { .monthly-col:first-child { border-right: none; border-bottom: 1px solid #F0E8DB; } }
+
+    .monthly-col-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: #8B5E3C;
+      margin-bottom: 10px;
+    }
+
+    .person-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #F8F3EC;
+      font-size: 0.85rem;
+    }
+    .person-row:last-child { border-bottom: none; }
+    .person-row-name { font-weight: 600; color: #1C1C1E; }
+    .person-row-count {
+      background: #F0F7F3;
+      color: #1B5E35;
+      font-weight: 700;
+      font-size: 0.78rem;
+      padding: 2px 10px;
+      border-radius: 999px;
+    }
+
+    .driver-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 6px 0;
+      border-bottom: 1px solid #F8F3EC;
+      font-size: 0.85rem;
+      gap: 8px;
+    }
+    .driver-row:last-child { border-bottom: none; }
+    .driver-row-name { font-weight: 600; color: #1C1C1E; }
+    .driver-dist-tags { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+    .dist-tag {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 999px;
+    }
+    .dist-short  { background: #D4EDDA; color: #1B5E35; }
+    .dist-medium { background: #FFF3CD; color: #856404; }
+    .dist-long   { background: #FDEBD0; color: #7D4E0F; }
+    .dist-unknown{ background: #EDE8E0; color: #4A3728; }
+
+    /* Monthly session list */
+    .monthly-session-list { padding: 0 0 8px; }
+    .msl-header {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: #8B5E3C;
+      padding: 12px 18px 8px;
+    }
+    .msl-row {
+      display: grid;
+      grid-template-columns: 80px 1fr 100px auto;
+      gap: 8px;
+      padding: 8px 18px;
+      border-top: 1px solid #F8F3EC;
+      font-size: 0.82rem;
+      align-items: center;
+    }
+    @media (max-width: 500px) {
+      .msl-row { grid-template-columns: 70px 1fr; }
+      .msl-driver, .msl-dist { display: none; }
+    }
+    .msl-date { color: #8E8E93; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .msl-place { font-weight: 500; color: #1C1C1E; }
+    .msl-project { font-size: 0.74rem; color: #AEAEB2; }
+    .msl-driver { color: #4A3728; font-size: 0.8rem; }
+    .msl-pax { text-align: right; font-weight: 700; color: #8B1A1A; white-space: nowrap; }
+
     /* ── Payment Summary ── */
     .payment-section { margin-bottom: 24px; }
 
     .payment-header { margin-bottom: 14px; }
-    .payment-header h2 { font-size: 1.1rem; font-weight: 700; color: #2d3748; }
-    .payment-subtitle { font-size: 0.82rem; color: #718096; margin-top: 3px; }
+    .payment-header h2 { font-size: 1.1rem; font-weight: 700; color: #1C1C1E; letter-spacing: -0.02em; }
+    .payment-subtitle { font-size: 0.82rem; color: #6E6E73; margin-top: 3px; }
 
     .payment-filter {
       background: white;
-      border-radius: 12px;
+      border-radius: 16px;
       padding: 14px 18px;
-      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      box-shadow: 0 2px 8px rgba(139,26,26,.07);
       margin-bottom: 18px;
       display: flex;
       flex-wrap: wrap;
@@ -200,18 +380,18 @@
     .filter-presets { display: flex; flex-wrap: wrap; gap: 6px; }
 
     .filter-btn {
-      padding: 5px 13px;
+      padding: 5px 14px;
       border-radius: 999px;
-      border: 1.5px solid #cbd5e0;
+      border: 1.5px solid #D9CFC4;
       background: white;
-      color: #4a5568;
+      color: #4A3728;
       font-size: 0.82rem;
       font-weight: 500;
       cursor: pointer;
       transition: all .15s;
     }
-    .filter-btn:hover { border-color: #2b6cb0; color: #2b6cb0; }
-    .filter-btn.active { background: #2b6cb0; border-color: #2b6cb0; color: white; font-weight: 600; }
+    .filter-btn:hover { border-color: #8B1A1A; color: #8B1A1A; }
+    .filter-btn.active { background: #8B1A1A; border-color: #8B1A1A; color: white; font-weight: 600; }
 
     .filter-custom {
       display: flex;
@@ -219,36 +399,36 @@
       align-items: center;
       gap: 8px;
       font-size: 0.84rem;
-      color: #4a5568;
+      color: #4A3728;
     }
     .filter-custom input[type="date"] {
-      border: 1.5px solid #cbd5e0;
-      border-radius: 6px;
+      border: 1.5px solid #D9CFC4;
+      border-radius: 8px;
       padding: 4px 8px;
       font-size: 0.84rem;
-      color: #2d3748;
+      color: #1C1C1E;
     }
     .filter-apply-btn {
-      padding: 4px 12px;
-      background: #2b6cb0;
+      padding: 5px 14px;
+      background: #8B1A1A;
       color: white;
       border: none;
-      border-radius: 6px;
+      border-radius: 999px;
       font-size: 0.82rem;
       font-weight: 600;
       cursor: pointer;
     }
-    .filter-apply-btn:hover { background: #2c5282; }
+    .filter-apply-btn:hover { background: #6B1414; }
 
-    .filter-period-label { font-size: 0.8rem; color: #718096; font-style: italic; margin-left: auto; }
+    .filter-period-label { font-size: 0.8rem; color: #6E6E73; font-style: italic; margin-left: auto; }
 
     .payment-role-block { margin-bottom: 20px; }
     .role-heading {
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: .06em;
-      color: #718096;
+      letter-spacing: .08em;
+      color: #8B5E3C;
       margin-bottom: 10px;
       padding-left: 2px;
     }
@@ -259,24 +439,24 @@
       gap: 16px;
     }
 
-    .person-card { background: white; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow: hidden; }
+    .person-card { background: white; border-radius: 16px; box-shadow: 0 2px 8px rgba(139,26,26,.07); overflow: hidden; }
 
     .person-card-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 14px 16px 12px;
-      border-bottom: 1px solid #edf2f7;
+      padding: 16px 18px 14px;
+      border-bottom: 1px solid #F0E8DB;
     }
-    .person-name { font-size: 1rem; font-weight: 700; color: #2d3748; }
+    .person-name { font-size: 1rem; font-weight: 700; color: #1C1C1E; letter-spacing: -0.01em; }
     .person-also-badge {
       display: inline-block;
       font-size: 0.72rem;
       font-weight: 600;
       padding: 2px 8px;
       border-radius: 999px;
-      background: #feebc8;
-      color: #c05621;
+      background: #FDEBD0;
+      color: #7D4E0F;
       margin-top: 3px;
     }
 
@@ -284,48 +464,49 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      background: #ebf8ff;
-      border-radius: 8px;
-      padding: 6px 12px;
-      min-width: 56px;
+      background: #F0F7F3;
+      border-radius: 10px;
+      padding: 7px 14px;
+      min-width: 58px;
     }
-    .session-count-pill .count-num { font-size: 1.5rem; font-weight: 800; color: #2b6cb0; line-height: 1; }
-    .session-count-pill .count-lbl { font-size: 0.65rem; color: #4299e1; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+    .session-count-pill .count-num { font-size: 1.6rem; font-weight: 800; color: #1B5E35; line-height: 1; letter-spacing: -0.03em; }
+    .session-count-pill .count-lbl { font-size: 0.62rem; color: #1B7A3E; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
 
     .session-row {
       display: grid;
       grid-template-columns: 90px 1fr auto;
       gap: 6px;
-      padding: 7px 16px;
-      border-bottom: 1px solid #f7fafc;
+      padding: 8px 18px;
+      border-bottom: 1px solid #F8F3EC;
       font-size: 0.8rem;
       align-items: start;
     }
     .session-row:last-child { border-bottom: none; }
-    .session-date { color: #718096; white-space: nowrap; font-variant-numeric: tabular-nums; }
-    .session-place { color: #2d3748; font-weight: 500; }
-    .session-meta { font-size: 0.74rem; color: #a0aec0; margin-top: 1px; }
-    .session-participants { text-align: right; white-space: nowrap; font-weight: 700; color: #4a5568; }
-    .session-duration { font-size: 0.72rem; color: #a0aec0; text-align: right; }
+    .session-date { color: #8E8E93; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .session-place { color: #1C1C1E; font-weight: 500; }
+    .session-meta { font-size: 0.74rem; color: #AEAEB2; margin-top: 1px; }
+    .session-participants { text-align: right; white-space: nowrap; font-weight: 700; color: #4A3728; }
+    .session-duration { font-size: 0.72rem; color: #AEAEB2; text-align: right; }
 
     .person-card-footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 8px 16px 12px;
-      border-top: 1px solid #edf2f7;
+      padding: 10px 18px 14px;
+      border-top: 1px solid #F0E8DB;
       font-size: 0.8rem;
-      color: #718096;
+      color: #6E6E73;
+      background: #FDFAF6;
     }
-    .person-card-footer strong { color: #2d3748; }
+    .person-card-footer strong { color: #1C1C1E; }
 
-    .no-sessions-msg { padding: 18px 16px; font-size: 0.84rem; color: #a0aec0; text-align: center; }
+    .no-sessions-msg { padding: 18px 16px; font-size: 0.84rem; color: #AEAEB2; text-align: center; }
 
     @media print {
       header, .cards, .charts, .payment-filter, .upload-btn, #file-input, .followup-alert, .table-card { display: none !important; }
       .payment-section { display: block !important; }
       .payment-grid { grid-template-columns: repeat(2, 1fr); }
-      .person-card { break-inside: avoid; box-shadow: none; border: 1px solid #e2e8f0; }
+      .person-card { break-inside: avoid; box-shadow: none; border: 1px solid #F0E8DB; }
     }
   </style>
 </head>
@@ -333,7 +514,7 @@
 
 <header>
   <div>
-    <h1>Events Dashboard</h1>
+    <h1>Baraka · Events Dashboard</h1>
     <p id="last-updated">No data loaded yet</p>
   </div>
   <button class="upload-btn" onclick="document.getElementById('file-input').click()">
@@ -359,24 +540,34 @@
     <div class="card"><div class="value" id="stat-followup">—</div><div class="label">Follow-ups</div></div>
   </div>
 
-  <!-- Charts -->
-  <div class="charts">
-    <div class="chart-card">
-      <h2>Sessions by Type</h2>
-      <div class="chart-wrap"><canvas id="chart-type"></canvas></div>
+  <!-- Monthly Overview -->
+  <div class="monthly-section" id="monthly-section" style="display:none">
+
+    <div class="monthly-trend-card">
+      <h2>Sessions &amp; Participants per Month</h2>
+      <div class="chart-wrap"><canvas id="chart-monthly"></canvas></div>
     </div>
-    <div class="chart-card">
-      <h2>Participants per Session</h2>
-      <div class="chart-wrap"><canvas id="chart-participants"></canvas></div>
+
+    <div class="month-selector-wrap">
+      <p class="month-selector-label">Select a month for details</p>
+      <div class="month-selector" id="month-selector"></div>
     </div>
-    <div class="chart-card">
-      <h2>Sessions by Facilitator</h2>
-      <div class="chart-wrap"><canvas id="chart-facilitator"></canvas></div>
+
+    <div class="monthly-detail" id="monthly-detail" style="display:none">
+      <div class="monthly-detail-header" id="monthly-detail-header"></div>
+      <div class="monthly-detail-grid">
+        <div class="monthly-col">
+          <div class="monthly-col-title">Facilitators</div>
+          <div id="monthly-facilitators"></div>
+        </div>
+        <div class="monthly-col">
+          <div class="monthly-col-title">Drivers &amp; Distance</div>
+          <div id="monthly-drivers"></div>
+        </div>
+      </div>
+      <div class="monthly-session-list" id="monthly-session-list"></div>
     </div>
-    <div class="chart-card">
-      <h2>Distance from Malindi</h2>
-      <div class="chart-wrap"><canvas id="chart-distance"></canvas></div>
-    </div>
+
   </div>
 
   <!-- Payment Summary -->
@@ -480,7 +671,7 @@ function parseAndRender(raw) {
 
   allRows = rows;
   renderStats(rows);
-  renderCharts(rows);
+  renderMonthly(rows);
   renderTable(rows);
   renderPaymentFilter();
   renderPaymentSummary(rows);
@@ -516,70 +707,176 @@ function renderStats(rows) {
   }
 }
 
-// ── Charts ───────────────────────────────────────────────────────────
-const COLORS = ['#4299e1','#48bb78','#ed8936','#9f7aea','#f56565','#38b2ac','#667eea','#f6ad55'];
+// ── Helpers ──────────────────────────────────────────────────────────
+function rowMonthKey(r) {
+  const d = new Date(r[COL.date]);
+  if (isNaN(d)) return null;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
 
-function count(rows, colIndex) {
+function monthLabel(key) {
+  const [y, m] = key.split('-');
+  return new Date(+y, +m - 1, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+}
+
+function classifyDistance(distStr) {
+  const s = (distStr || '').toLowerCase();
+  if (!s || s === 'unknown') return 'unknown';
+  const num = parseInt(s);
+  if (isNaN(num)) return 'unknown';
+  if (num <= 20)  return 'short';
+  if (num <= 40)  return 'medium';
+  return 'long';
+}
+
+function distTag(distStr) {
+  const cls = classifyDistance(distStr);
+  const labels = { short: 'Short', medium: 'Medium', long: 'Long', unknown: '?' };
+  return `<span class="dist-tag dist-${cls}">${labels[cls]}</span>`;
+}
+
+// ── Monthly overview ──────────────────────────────────────────────────
+function buildMonthMap(rows) {
   const map = {};
   rows.forEach(r => {
-    const key = r[colIndex] || 'Unknown';
-    map[key] = (map[key] || 0) + 1;
+    const key = rowMonthKey(r);
+    if (!key) return;
+    if (!map[key]) map[key] = [];
+    map[key].push(r);
   });
   return map;
 }
 
-function makeChart(id, type, labels, data, options = {}) {
-  if (charts[id]) charts[id].destroy();
-  const ctx = document.getElementById(id).getContext('2d');
-  charts[id] = new Chart(ctx, {
-    type,
+function renderMonthly(rows) {
+  const monthMap = buildMonthMap(rows);
+  const sortedKeys = Object.keys(monthMap).sort();
+
+  if (sortedKeys.length === 0) return;
+  document.getElementById('monthly-section').style.display = 'flex';
+
+  // ── Trend chart ──
+  const sessionCounts    = sortedKeys.map(k => monthMap[k].length);
+  const participantTotals = sortedKeys.map(k =>
+    monthMap[k].reduce((s, r) => s + (parseInt(r[COL.participants]) || 0), 0)
+  );
+  const labels = sortedKeys.map(monthLabel);
+
+  if (charts['chart-monthly']) charts['chart-monthly'].destroy();
+  const ctx = document.getElementById('chart-monthly').getContext('2d');
+  charts['chart-monthly'] = new Chart(ctx, {
+    type: 'bar',
     data: {
       labels,
-      datasets: [{
-        data,
-        backgroundColor: COLORS,
-        borderColor: type === 'line' ? COLORS[0] : COLORS,
-        borderWidth: type === 'bar' ? 0 : 2,
-        fill: false,
-        tension: 0.3,
-      }]
+      datasets: [
+        {
+          label: 'Sessions',
+          data: sessionCounts,
+          backgroundColor: '#C0392B',
+          borderRadius: 6,
+          yAxisID: 'ySessions',
+        },
+        {
+          label: 'Participants',
+          data: participantTotals,
+          backgroundColor: '#1B6B3A',
+          borderRadius: 6,
+          yAxisID: 'yParticipants',
+        }
+      ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { display: type === 'doughnut', position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
       },
-      scales: type !== 'doughnut' ? {
-        y: { beginAtZero: true, ticks: { font: { size: 11 } } },
-        x: { ticks: { font: { size: 11 } } }
-      } : {},
-      ...options
+      scales: {
+        ySessions:     { beginAtZero: true, position: 'left',  ticks: { font: { size: 11 }, stepSize: 1 }, grid: { color: '#F0E8DB' } },
+        yParticipants: { beginAtZero: true, position: 'right', ticks: { font: { size: 11 } }, grid: { display: false } },
+        x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+      }
     }
   });
+
+  // ── Month selector buttons ──
+  const sel = document.getElementById('month-selector');
+  sel.innerHTML = sortedKeys.map(k =>
+    `<button class="month-btn" data-month="${k}">${monthLabel(k)}</button>`
+  ).join('');
+
+  sel.querySelectorAll('.month-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      sel.querySelectorAll('.month-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderMonthDetail(monthMap[btn.dataset.month], btn.dataset.month);
+    });
+  });
+
+  // Auto-select most recent month
+  const lastBtn = sel.querySelector(`[data-month="${sortedKeys[sortedKeys.length - 1]}"]`);
+  if (lastBtn) lastBtn.click();
 }
 
-function renderCharts(rows) {
-  // Sessions by project type
-  const byType = count(rows, COL.project);
-  makeChart('chart-type', 'doughnut', Object.keys(byType), Object.values(byType));
+function renderMonthDetail(rows, monthKey) {
+  const totalPax = rows.reduce((s, r) => s + (parseInt(r[COL.participants]) || 0), 0);
 
-  // Participants per session (bar)
-  const sessionLabels = rows.map((r, i) => {
-    const d = r[COL.date] || '';
-    const place = r[COL.place] || `#${i+1}`;
-    return `${d} ${place}`.substring(0, 20);
+  // Header
+  document.getElementById('monthly-detail-header').innerHTML = `
+    <div class="mh-title">${monthLabel(monthKey)}</div>
+    <div class="mh-stats">
+      <div class="mh-stat"><span class="mh-num">${rows.length}</span><span class="mh-lbl">Sessions</span></div>
+      <div class="mh-stat"><span class="mh-num">${totalPax.toLocaleString()}</span><span class="mh-lbl">People reached</span></div>
+    </div>
+  `;
+
+  // Facilitators
+  const facMap = {};
+  rows.forEach(r => {
+    const f = (r[COL.facilitator] || '').trim();
+    if (f) facMap[f] = (facMap[f] || 0) + 1;
   });
-  const participantData = rows.map(r => parseInt(r[COL.participants]) || 0);
-  makeChart('chart-participants', 'bar', sessionLabels, participantData);
+  document.getElementById('monthly-facilitators').innerHTML =
+    Object.keys(facMap).sort().map(name => `
+      <div class="person-row">
+        <span class="person-row-name">${name}</span>
+        <span class="person-row-count">${facMap[name]} session${facMap[name] !== 1 ? 's' : ''}</span>
+      </div>`).join('') || '<p style="font-size:.82rem;color:#AEAEB2">No data</p>';
 
-  // Sessions by facilitator
-  const byFacilitator = count(rows, COL.facilitator);
-  makeChart('chart-facilitator', 'bar', Object.keys(byFacilitator), Object.values(byFacilitator));
+  // Drivers with distance tags
+  const drvMap = {};
+  rows.forEach(r => {
+    const d = (r[COL.driver] || '').trim();
+    if (!d) return;
+    if (!drvMap[d]) drvMap[d] = [];
+    drvMap[d].push(r[COL.distance]);
+  });
+  document.getElementById('monthly-drivers').innerHTML =
+    Object.keys(drvMap).sort().map(name => `
+      <div class="driver-row">
+        <span class="driver-row-name">${name} <span style="font-size:.75rem;font-weight:400;color:#8E8E93">(${drvMap[name].length}×)</span></span>
+        <span class="driver-dist-tags">${drvMap[name].map(distTag).join('')}</span>
+      </div>`).join('') || '<p style="font-size:.82rem;color:#AEAEB2">No data</p>';
 
-  // Distance distribution
-  const byDistance = count(rows, COL.distance);
-  makeChart('chart-distance', 'bar', Object.keys(byDistance), Object.values(byDistance));
+  // Session list
+  const sorted = [...rows].sort((a, b) => new Date(a[COL.date]) - new Date(b[COL.date]));
+  document.getElementById('monthly-session-list').innerHTML = `
+    <div class="msl-header">Session details</div>
+    ${sorted.map(r => {
+      const pax = parseInt(r[COL.participants]);
+      return `
+        <div class="msl-row">
+          <span class="msl-date">${r[COL.date] || '—'}</span>
+          <span>
+            <div class="msl-place">${r[COL.place] || '—'}</div>
+            <div class="msl-project">${r[COL.project] || '—'}</div>
+          </span>
+          <span class="msl-driver">${r[COL.driver] || '—'} ${distTag(r[COL.distance])}</span>
+          <span class="msl-pax">${!isNaN(pax) ? pax + ' pax' : '—'}</span>
+        </div>`;
+    }).join('')}
+  `;
+
+  document.getElementById('monthly-detail').style.display = 'block';
 }
 
 // ── Table ────────────────────────────────────────────────────────────
