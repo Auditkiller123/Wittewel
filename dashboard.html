@@ -540,6 +540,16 @@
 
     .no-sessions-msg { padding: 18px 16px; font-size: 0.84rem; color: #B0A090; text-align: center; }
 
+    .type-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+    .type-chip {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #EDE8DC;
+      color: #4A3728;
+    }
+
     @media print {
       header, .cards, .monthly-section, .payment-filter, .upload-btn, #file-input, .followup-alert, .table-card { display: none !important; }
       .payment-section { display: block !important; }
@@ -859,6 +869,15 @@ function renderMonthly(rows) {
   if (lastBtn) lastBtn.click();
 }
 
+function eventTypeLabel(project) {
+  const p = (project || '').toLowerCase();
+  if (p.includes('children'))           return 'Children';
+  if (p.includes('parent'))             return 'Parents';
+  if (p.includes('ttt') || p.includes('teacher')) return 'Teachers';
+  if (p.includes('office'))             return 'Office';
+  return project || 'Other';
+}
+
 function renderMonthDetail(rows, monthKey) {
   const totalPax = rows.reduce((s, r) => s + (parseInt(r[COL.participants]) || 0), 0);
 
@@ -871,38 +890,63 @@ function renderMonthDetail(rows, monthKey) {
     </div>
   `;
 
-  // Facilitators
+  // Facilitators — with event type breakdown
   const facMap = {};
   rows.forEach(r => {
     const f = (r[COL.facilitator] || '').trim();
-    if (f) facMap[f] = (facMap[f] || 0) + 1;
+    if (!f) return;
+    if (!facMap[f]) facMap[f] = {};
+    const type = eventTypeLabel(r[COL.project]);
+    facMap[f][type] = (facMap[f][type] || 0) + 1;
   });
   document.getElementById('monthly-facilitators').innerHTML =
-    Object.keys(facMap).sort().map(name => `
-      <div class="person-row">
-        <span class="person-row-name">${name}</span>
-        <span class="person-row-count">${facMap[name]} session${facMap[name] !== 1 ? 's' : ''}</span>
-      </div>`).join('') || '<p style="font-size:.82rem;color:#AEAEB2">No data</p>';
+    Object.keys(facMap).sort().map(name => {
+      const types = facMap[name];
+      const total = Object.values(types).reduce((a, b) => a + b, 0);
+      const breakdown = Object.entries(types)
+        .map(([t, n]) => `<span class="type-chip">${t}: ${n}</span>`).join('');
+      return `
+        <div class="person-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+          <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
+            <span class="person-row-name">${name}</span>
+            <span class="person-row-count">${total} session${total !== 1 ? 's' : ''}</span>
+          </div>
+          <div class="type-chips">${breakdown}</div>
+        </div>`;
+    }).join('') || '<p style="font-size:.82rem;color:#B0A090">No data</p>';
 
-  // Drivers with distance tags
+  // Drivers — with distance category counts
   const drvMap = {};
   rows.forEach(r => {
     const d = (r[COL.driver] || '').trim();
     if (!d) return;
-    if (!drvMap[d]) drvMap[d] = [];
-    drvMap[d].push(r[COL.distance]);
+    if (!drvMap[d]) drvMap[d] = { short: 0, medium: 0, long: 0, unknown: 0 };
+    drvMap[d][classifyDistance(r[COL.distance])]++;
   });
   document.getElementById('monthly-drivers').innerHTML =
-    Object.keys(drvMap).sort().map(name => `
-      <div class="driver-row">
-        <span class="driver-row-name">${name} <span style="font-size:.75rem;font-weight:400;color:#8E8E93">(${drvMap[name].length}×)</span></span>
-        <span class="driver-dist-tags">${drvMap[name].map(distTag).join('')}</span>
-      </div>`).join('') || '<p style="font-size:.82rem;color:#AEAEB2">No data</p>';
+    Object.keys(drvMap).sort().map(name => {
+      const c = drvMap[name];
+      const total = c.short + c.medium + c.long + c.unknown;
+      const tags = [
+        c.short   ? `<span class="dist-tag dist-short">Short × ${c.short}</span>`   : '',
+        c.medium  ? `<span class="dist-tag dist-medium">Medium × ${c.medium}</span>` : '',
+        c.long    ? `<span class="dist-tag dist-long">Long × ${c.long}</span>`       : '',
+        c.unknown ? `<span class="dist-tag dist-unknown">? × ${c.unknown}</span>`    : '',
+      ].filter(Boolean).join('');
+      return `
+        <div class="driver-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+          <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
+            <span class="driver-row-name">${name}</span>
+            <span class="person-row-count">${total} trip${total !== 1 ? 's' : ''}</span>
+          </div>
+          <div class="driver-dist-tags" style="justify-content:flex-start">${tags}</div>
+        </div>`;
+    }).join('') || '<p style="font-size:.82rem;color:#B0A090">No data</p>';
 
   // Session list
   const sorted = [...rows].sort((a, b) => new Date(a[COL.date]) - new Date(b[COL.date]));
   document.getElementById('monthly-session-list').innerHTML = `
-    <div class="msl-header">Session details</div>
+    <div class="msl-header">Sessions this month</div>
     ${sorted.map(r => {
       const pax = parseInt(r[COL.participants]);
       return `
@@ -910,9 +954,9 @@ function renderMonthDetail(rows, monthKey) {
           <span class="msl-date">${r[COL.date] || '—'}</span>
           <span>
             <div class="msl-place">${r[COL.place] || '—'}</div>
-            <div class="msl-project">${r[COL.project] || '—'}</div>
+            <div class="msl-project">${r[COL.facilitator] || '—'} · ${r[COL.driver] || '—'}</div>
           </span>
-          <span class="msl-driver">${r[COL.driver] || '—'} ${distTag(r[COL.distance])}</span>
+          <span class="msl-driver">${projectBadge(r[COL.project])} ${distTag(r[COL.distance])}</span>
           <span class="msl-pax">${!isNaN(pax) ? pax + ' pax' : '—'}</span>
         </div>`;
     }).join('')}
