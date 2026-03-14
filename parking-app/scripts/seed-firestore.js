@@ -11,7 +11,7 @@
 
 const admin = require('firebase-admin');
 
-const PROJECT_ID = 'jouw-project-id'; // TODO: aanpassen
+const PROJECT_ID = 'parking-app-69312';
 
 admin.initializeApp({
   credential: admin.credential.applicationDefault(),
