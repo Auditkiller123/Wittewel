@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "Parkeerapp",
+    "slug": "parking-app",
+    "version": "1.0.0",
+    "sdkVersion": "51.0.0",
+    "platforms": ["ios", "android"],
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "backgroundColor": "#1a73e8"
+    },
+    "ios": {
+      "bundleIdentifier": "nl.wittewel.parkingapp",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "De app gebruikt je locatie om te detecteren wanneer je de parkeergarage binnenkomt of verlaat.",
+        "NSLocationAlwaysUsageDescription": "De app heeft altijd toegang tot je locatie nodig voor geofencing op de achtergrond.",
+        "NSLocationWhenInUseUsageDescription": "De app gebruikt je locatie om te detecteren wanneer je de parkeergarage binnenkomt of verlaat.",
+        "UIBackgroundModes": ["location", "fetch"]
+      }
+    },
+    "android": {
+      "package": "nl.wittewel.parkingapp",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "De app gebruikt je locatie voor geofencing van de parkeergarage.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#1a73e8"
+        }
+      ]
+    ]
+  }
+}
