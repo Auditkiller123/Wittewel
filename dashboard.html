@@ -1409,13 +1409,22 @@ async function loadFromSheets() {
   btn.disabled = true;
   setStatus('Loading data from Google Sheets…');
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+
   try {
-    const res = await fetch(SHEET_URL);
+    const res = await fetch(SHEET_URL, { signal: controller.signal });
+    clearTimeout(timeout);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
     parseAndRender(text);
   } catch (err) {
-    setStatus('Could not load data — check that the sheet is set to "Anyone with link can view".');
+    clearTimeout(timeout);
+    if (err.name === 'AbortError') {
+      setStatus('⚠️ Timeout — Google Sheets did not respond. Press ↻ to try again.');
+    } else {
+      setStatus('⚠️ Could not load data. Make sure the sheet is set to "Anyone with link can view".');
+    }
     console.error(err);
   } finally {
     btn.textContent = '↻ Refresh data';
