@@ -1,4 +1,5 @@
 node_modules/
+serviceAccount.json
 .expo/
 dist/
 *.orig.*
