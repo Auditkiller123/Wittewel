@@ -1,13 +1,26 @@
+# Dependencies
 node_modules/
-serviceAccount.json
+
+# Expo
 .expo/
 dist/
-*.orig.*
 web-build/
+
+# Environment & secrets
 .env
+.env.local
+serviceAccount.json
+
+# Native builds
+android/
+ios/
 *.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
-*.orig.*
+*.keystore
+
+# Logs
+npm-debug.*
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
