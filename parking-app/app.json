@@ -4,6 +4,12 @@
     "slug": "parking-app",
     "version": "1.0.0",
     "sdkVersion": "51.0.0",
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/parking-app-69312"
+    },
     "platforms": ["ios", "android"],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
