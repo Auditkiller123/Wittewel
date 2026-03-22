@@ -550,6 +550,53 @@
       color: #4A3728;
     }
 
+    .type-summary-chips { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 4px; }
+    .type-summary-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+    .type-summary-chip .tsc-count {
+      font-size: 1.15rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .tsc-children { background: #D4EDDA; color: #1B5E35; }
+    .tsc-parents  { background: #C8E6D0; color: #145228; }
+    .tsc-teachers { background: #FDEBD0; color: #7D4E0F; }
+    .tsc-office   { background: #EDE8DC; color: #4A3728; }
+    .tsc-other    { background: #F0EBE0; color: #6B5740; }
+
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 10px;
+      padding-bottom: 4px;
+    }
+    .insight-item {
+      background: #F5F0E8;
+      border-radius: 10px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+    .insight-value {
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: #D4521C;
+      line-height: 1.2;
+    }
+    .insight-label {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: #8B7355;
+      margin-top: 3px;
+    }
+
     /* ── Impact banner ── */
     .impact-banner {
       background: #2C1A0E;
@@ -745,20 +792,38 @@
 
     <div class="monthly-detail" id="monthly-detail" style="display:none">
       <div class="monthly-detail-header" id="monthly-detail-header"></div>
+
+      <!-- 1. Sessions by type -->
+      <div class="monthly-col" style="border-top:1px solid #E8E0D0;margin:0">
+        <div class="monthly-col-title">Sessions by type</div>
+        <div id="monthly-session-types" class="type-summary-chips"></div>
+      </div>
+
+      <!-- 2. Facilitators & Drivers -->
       <div class="monthly-detail-grid">
         <div class="monthly-col">
-          <div class="monthly-col-title">Facilitators</div>
+          <div class="monthly-col-title">Per facilitator — by type</div>
           <div id="monthly-facilitators"></div>
         </div>
         <div class="monthly-col">
-          <div class="monthly-col-title">Drivers &amp; Distance</div>
+          <div class="monthly-col-title">Drivers — trips this month</div>
           <div id="monthly-drivers"></div>
         </div>
       </div>
+
+      <!-- 3. Age groups -->
       <div class="monthly-col" style="border-top:1px solid #E8E0D0;margin:0">
         <div class="monthly-col-title">Who did we reach?</div>
         <div id="monthly-agegroups" style="display:flex;flex-wrap:wrap;gap:6px;padding-bottom:4px"></div>
       </div>
+
+      <!-- 4. At a glance -->
+      <div class="monthly-col" style="border-top:1px solid #E8E0D0;margin:0">
+        <div class="monthly-col-title">At a glance</div>
+        <div id="monthly-insights" class="insights-grid"></div>
+      </div>
+
+      <!-- 5. Session list -->
       <div class="monthly-session-list" id="monthly-session-list"></div>
     </div>
 
@@ -1054,6 +1119,15 @@ function eventTypeLabel(project) {
   return project || 'Other';
 }
 
+function typeSummaryChipClass(type) {
+  const t = type.toLowerCase();
+  if (t === 'children') return 'tsc-children';
+  if (t === 'parents')  return 'tsc-parents';
+  if (t === 'teachers') return 'tsc-teachers';
+  if (t === 'office')   return 'tsc-office';
+  return 'tsc-other';
+}
+
 function renderMonthDetail(rows, monthKey) {
   const totalPax = rows.reduce((s, r) => s + (parseInt(r[COL.participants]) || 0), 0);
 
@@ -1066,7 +1140,22 @@ function renderMonthDetail(rows, monthKey) {
     </div>
   `;
 
-  // Facilitators — sorted by activity, with event type + hours
+  // 1. Sessions by type
+  const typeMap = {};
+  rows.forEach(r => {
+    const type = eventTypeLabel(r[COL.project]);
+    typeMap[type] = (typeMap[type] || 0) + 1;
+  });
+  document.getElementById('monthly-session-types').innerHTML =
+    Object.entries(typeMap)
+      .sort((a, b) => b[1] - a[1])
+      .map(([type, count]) =>
+        `<span class="type-summary-chip ${typeSummaryChipClass(type)}">
+          <span class="tsc-count">${count}</span>${type}
+        </span>`
+      ).join('') || '<span style="font-size:.82rem;color:#B0A090">No data</span>';
+
+  // 2. Facilitators — sorted by activity, with event type + hours
   const facMap = {};
   rows.forEach(r => {
     const f = (r[COL.facilitator] || '').trim();
@@ -1157,6 +1246,30 @@ function renderMonthDetail(rows, monthKey) {
           .map(([ag, n]) => `<span class="type-chip" style="background:#FDF0E8;color:#D4521C">${ag}: <strong>${n.toLocaleString()}</strong></span>`)
           .join('')
       : '<span style="font-size:.82rem;color:#B0A090">No age data</span>';
+
+  // 4. At a glance
+  const avgPax = rows.length > 0 ? (totalPax / rows.length).toFixed(1) : '—';
+  const totalMins = rows.reduce((s, r) => s + (calcDurationMinutes(r[COL.startTime], r[COL.endTime]) || 0), 0);
+  const hoursStr = totalMins > 0 ? formatDuration(totalMins) : '—';
+  const locMap = {};
+  rows.forEach(r => { const l = (r[COL.place] || '').trim(); if (l) locMap[l] = (locMap[l] || 0) + 1; });
+  const topLoc = Object.entries(locMap).sort((a, b) => b[1] - a[1])[0];
+  const followupCount = rows.filter(r => {
+    const f = (r[COL.followup] || '').toLowerCase();
+    return f && f !== 'no' && f !== 'nee' && f !== '0';
+  }).length;
+  const insights = [
+    { label: 'Avg per session', value: avgPax + ' pax' },
+    { label: 'Total hours', value: hoursStr },
+    { label: 'Top location', value: topLoc ? topLoc[0] : '—' },
+    { label: 'Follow-ups', value: followupCount === 0 ? 'None' : followupCount },
+  ];
+  document.getElementById('monthly-insights').innerHTML =
+    insights.map(({ label, value }) => `
+      <div class="insight-item">
+        <div class="insight-value">${value}</div>
+        <div class="insight-label">${label}</div>
+      </div>`).join('');
 
   document.getElementById('monthly-detail').style.display = 'block';
 }
