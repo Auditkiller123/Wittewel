@@ -423,6 +423,36 @@
     }
     .dgt-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: .08em; opacity: .75; }
     .dgt-amount { font-family: 'Playfair Display', Georgia, serif; font-size: 1.5rem; font-weight: 800; color: #C9A227; }
+
+    .rate-config {
+      background: #F5F0E8;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .rate-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: #4A3728;
+    }
+    .rate-label { min-width: 80px; }
+    .rate-input {
+      width: 64px;
+      padding: 4px 8px;
+      border: 1px solid #D9D2C5;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #2C1A0E;
+      background: white;
+      text-align: right;
+    }
+    .rate-input:focus { outline: none; border-color: #D4521C; }
     .dist-tag {
       font-size: 0.7rem;
       font-weight: 600;
@@ -1266,13 +1296,12 @@ function renderMonthDetail(rows, monthKey) {
         </div>`)
       .join('') || '<p style="font-size:.82rem;color:#B0A090">No data</p>';
 
-  // Drivers — trip breakdown by distance category + payment
-  const RATES = { short: 100, long: 200, unknown: 150 };
+  // Drivers — trip breakdown by duration category + configurable payment
   const drvMap = {};
   rows.forEach(r => {
     const drivers = (r[COL.driver] || '').split(',').map(d => d.trim()).filter(Boolean);
-    const km = parseInt(r[COL.distance]) || 0;
-    const type = km === 0 ? 'unknown' : km <= 10 ? 'short' : 'long';
+    const mins = parseInt(r[COL.distance]) || 0;
+    const type = mins === 0 ? 'unknown' : mins <= 10 ? 'short' : 'long';
     drivers.forEach(d => {
       if (!drvMap[d]) drvMap[d] = { short: 0, long: 0, unknown: 0 };
       drvMap[d][type]++;
@@ -1282,34 +1311,67 @@ function renderMonthDetail(rows, monthKey) {
   const driverEntries = Object.entries(drvMap)
     .sort((a, b) => (b[1].short + b[1].long + b[1].unknown) - (a[1].short + a[1].long + a[1].unknown));
 
-  const grandTotal = driverEntries.reduce((sum, [, c]) =>
-    sum + c.short * RATES.short + c.long * RATES.long + c.unknown * RATES.unknown, 0);
+  // Store for recalculation when rates change
+  window._driverEntries = driverEntries;
 
-  document.getElementById('monthly-drivers').innerHTML =
-    driverEntries.map(([name, c]) => {
-      const total = c.short * RATES.short + c.long * RATES.long + c.unknown * RATES.unknown;
-      const chips = [
-        c.short   ? `<span class="dpc-badge dpc-short">${c.short} × 0–10 km</span>`   : '',
-        c.long    ? `<span class="dpc-badge dpc-long">${c.long} × 10–20 km</span>`     : '',
-        c.unknown ? `<span class="dpc-badge dpc-unknown">${c.unknown} × ? km</span>`   : '',
-      ].filter(Boolean).join('');
-      return `
-        <div class="person-row" style="align-items:flex-start;gap:8px;flex-wrap:wrap">
-          <span style="display:flex;align-items:center;gap:6px;flex:1;min-width:100px">
-            <span style="font-size:1rem">🏍️</span>
-            <span class="person-row-name">${name}</span>
-          </span>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-            <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end">${chips}</div>
-            <span class="person-row-count">${total} sh</span>
-          </div>
-        </div>`;
-    }).join('') +
-    `<div class="driver-grand-total">
+  function renderDriverRows() {
+    const rShort   = parseInt(document.getElementById('rate-short').value)   || 0;
+    const rLong    = parseInt(document.getElementById('rate-long').value)    || 0;
+    const rUnknown = parseInt(document.getElementById('rate-unknown').value) || 0;
+
+    const grand = window._driverEntries.reduce((s, [, c]) =>
+      s + c.short * rShort + c.long * rLong + c.unknown * rUnknown, 0);
+
+    document.getElementById('driver-rows').innerHTML =
+      window._driverEntries.map(([name, c]) => {
+        const total = c.short * rShort + c.long * rLong + c.unknown * rUnknown;
+        const chips = [
+          c.short   ? `<span class="dpc-badge dpc-short">${c.short} × 0–10 min</span>`   : '',
+          c.long    ? `<span class="dpc-badge dpc-long">${c.long} × 10–20 min</span>`     : '',
+          c.unknown ? `<span class="dpc-badge dpc-unknown">${c.unknown} × ? min</span>`   : '',
+        ].filter(Boolean).join('');
+        return `
+          <div class="person-row" style="align-items:flex-start;gap:8px;flex-wrap:wrap">
+            <span style="display:flex;align-items:center;gap:6px;flex:1;min-width:100px">
+              <span style="font-size:1rem">🏍️</span>
+              <span class="person-row-name">${name}</span>
+            </span>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+              <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end">${chips}</div>
+              ${total > 0 ? `<span class="person-row-count">${total} sh</span>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+
+    document.getElementById('driver-grand-total-amount').textContent = grand.toLocaleString() + ' sh';
+  }
+
+  document.getElementById('monthly-drivers').innerHTML = `
+    <div class="rate-config">
+      <div class="rate-row">
+        <label class="rate-label"><span class="dpc-badge dpc-short">0–10 min</span></label>
+        <input id="rate-short" class="rate-input" type="number" min="0" value="100" /> sh / trip
+      </div>
+      <div class="rate-row">
+        <label class="rate-label"><span class="dpc-badge dpc-long">10–20 min</span></label>
+        <input id="rate-long" class="rate-input" type="number" min="0" value="200" /> sh / trip
+      </div>
+      <div class="rate-row">
+        <label class="rate-label"><span class="dpc-badge dpc-unknown">? min</span></label>
+        <input id="rate-unknown" class="rate-input" type="number" min="0" value="150" /> sh / trip
+      </div>
+    </div>
+    <div id="driver-rows"></div>
+    <div class="driver-grand-total">
       <div class="dgt-label">Total to pay all drivers</div>
-      <div class="dgt-amount">${grandTotal.toLocaleString()} sh</div>
-    </div>`
-    || '<p style="font-size:.82rem;color:#B0A090">No data</p>';
+      <div id="driver-grand-total-amount" class="dgt-amount">—</div>
+    </div>
+  `;
+
+  document.getElementById('rate-short').addEventListener('input', renderDriverRows);
+  document.getElementById('rate-long').addEventListener('input', renderDriverRows);
+  document.getElementById('rate-unknown').addEventListener('input', renderDriverRows);
+  renderDriverRows();
 
   // Session list
   const sorted = [...rows].sort((a, b) => (parseDate(a[COL.date]) || 0) - (parseDate(b[COL.date]) || 0));
