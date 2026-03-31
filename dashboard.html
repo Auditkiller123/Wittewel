@@ -1266,8 +1266,7 @@ function renderMonthDetail(rows, monthKey) {
         </div>`)
       .join('') || '<p style="font-size:.82rem;color:#B0A090">No data</p>';
 
-  // Drivers — payment per trip type based on distance from Malindi
-  // 0–10 km = 100 shillings, 10–20 km = 200 shillings
+  // Drivers — trip breakdown by distance category + payment
   const RATES = { short: 100, long: 200, unknown: 150 };
   const drvMap = {};
   rows.forEach(r => {
@@ -1286,26 +1285,31 @@ function renderMonthDetail(rows, monthKey) {
   const grandTotal = driverEntries.reduce((sum, [, c]) =>
     sum + c.short * RATES.short + c.long * RATES.long + c.unknown * RATES.unknown, 0);
 
-  document.getElementById('monthly-drivers').innerHTML = `
-    <img class="boda-photo"
-      src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/Boda_bodas_for_hire.jpg/1280px-Boda_bodas_for_hire.jpg"
-      alt="Boda bodas in Kenya" />
-    ${driverEntries.map(([name, c]) => {
+  document.getElementById('monthly-drivers').innerHTML =
+    driverEntries.map(([name, c]) => {
       const total = c.short * RATES.short + c.long * RATES.long + c.unknown * RATES.unknown;
+      const chips = [
+        c.short   ? `<span class="dpc-badge dpc-short">${c.short} × 0–10 km</span>`   : '',
+        c.long    ? `<span class="dpc-badge dpc-long">${c.long} × 10–20 km</span>`     : '',
+        c.unknown ? `<span class="dpc-badge dpc-unknown">${c.unknown} × ? km</span>`   : '',
+      ].filter(Boolean).join('');
       return `
-        <div class="driver-payment-card">
-          <div class="dpc-name">${name}</div>
-          ${c.short   ? `<div class="dpc-row"><span><span class="dpc-badge dpc-short">0–10 km</span>${c.short} trip${c.short !== 1 ? 's' : ''} × 100 sh</span><span class="dpc-amount">${c.short * 100} sh</span></div>` : ''}
-          ${c.long    ? `<div class="dpc-row"><span><span class="dpc-badge dpc-long">10–20 km</span>${c.long} trip${c.long !== 1 ? 's' : ''} × 200 sh</span><span class="dpc-amount">${c.long * 200} sh</span></div>` : ''}
-          ${c.unknown ? `<div class="dpc-row"><span><span class="dpc-badge dpc-unknown">? km</span>${c.unknown} trip${c.unknown !== 1 ? 's' : ''} × 150 sh</span><span class="dpc-amount">${c.unknown * 150} sh</span></div>` : ''}
-          <div class="dpc-total"><span>Total</span><span class="dpc-total-amount">${total} sh</span></div>
+        <div class="person-row" style="align-items:flex-start;gap:8px;flex-wrap:wrap">
+          <span style="display:flex;align-items:center;gap:6px;flex:1;min-width:100px">
+            <span style="font-size:1rem">🏍️</span>
+            <span class="person-row-name">${name}</span>
+          </span>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end">${chips}</div>
+            <span class="person-row-count">${total} sh</span>
+          </div>
         </div>`;
-    }).join('')}
-    <div class="driver-grand-total">
-      <div><div class="dgt-label">Total to pay all drivers</div></div>
+    }).join('') +
+    `<div class="driver-grand-total">
+      <div class="dgt-label">Total to pay all drivers</div>
       <div class="dgt-amount">${grandTotal.toLocaleString()} sh</div>
-    </div>
-  ` || '<p style="font-size:.82rem;color:#B0A090">No data</p>';
+    </div>`
+    || '<p style="font-size:.82rem;color:#B0A090">No data</p>';
 
   // Session list
   const sorted = [...rows].sort((a, b) => (parseDate(a[COL.date]) || 0) - (parseDate(b[COL.date]) || 0));
