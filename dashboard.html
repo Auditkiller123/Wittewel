@@ -937,11 +937,11 @@ function parseAndRender(raw) {
     return `${parseInt(mo) + 1}/${d}/${y}` + (h ? ` ${h}:${(mi || '0').padStart(2, '0')}:${(s || '0').padStart(2, '0')}` : '');
   }
 
-  // Normalize gviz date values in key columns
+  // Only normalize the timestamp column (used for row detection only)
+  // Leave COL.date as-is — it's plain text DD-MM-YYYY in the sheet
   const normalized = lines.map(r => {
     const row = [...r];
     row[COL.timestamp] = gvizDateToString(row[COL.timestamp]);
-    if (row[COL.date]) row[COL.date] = gvizDateToString(row[COL.date]);
     return row;
   });
 
@@ -1027,18 +1027,12 @@ function renderStats(rows) {
 // Parse DD/MM/YYYY or MM/DD/YYYY — assumes DD/MM if day > 12, else DD/MM (European)
 function parseDate(str) {
   if (!str) return null;
-  // Handle DD-MM-YYYY or DD/MM/YYYY (European format used in the sheet)
-  const m = (str || '').match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+  // Sheet dates are always DD-MM-YYYY — first number is always the day
+  const m = str.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
   if (m) {
-    const a = parseInt(m[1]), b = parseInt(m[2]), y = parseInt(m[3]);
-    // If first part > 12 it must be the day → DD-MM-YYYY
-    const day   = a > 12 ? a : b;
-    const month = a > 12 ? b : a;
-    return new Date(y, month - 1, day);
+    return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
   }
-  // Handle gviz Date(y,m,d) already converted to M/D/YYYY by gvizDateToString
-  const d = new Date(str);
-  return isNaN(d) ? null : d;
+  return null;
 }
 
 function rowMonthKey(r) {
