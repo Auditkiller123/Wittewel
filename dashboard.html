@@ -1027,14 +1027,16 @@ function renderStats(rows) {
 // Parse DD/MM/YYYY or MM/DD/YYYY — assumes DD/MM if day > 12, else DD/MM (European)
 function parseDate(str) {
   if (!str) return null;
-  const m = (str || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  // Handle DD-MM-YYYY or DD/MM/YYYY (European format used in the sheet)
+  const m = (str || '').match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
   if (m) {
     const a = parseInt(m[1]), b = parseInt(m[2]), y = parseInt(m[3]);
-    // If first part > 12 it must be the day (DD/MM/YYYY)
-    const day = a > 12 ? a : b;
+    // If first part > 12 it must be the day → DD-MM-YYYY
+    const day   = a > 12 ? a : b;
     const month = a > 12 ? b : a;
     return new Date(y, month - 1, day);
   }
+  // Handle gviz Date(y,m,d) already converted to M/D/YYYY by gvizDateToString
   const d = new Date(str);
   return isNaN(d) ? null : d;
 }
@@ -1178,7 +1180,7 @@ function renderMonthDetail(rows, monthKey) {
     </div>
   `;
 
-  // Facilitators — count per person
+  // Facilitators — each cell may contain one name (count per unique entry)
   const facMap = {};
   rows.forEach(r => {
     const f = (r[COL.facilitator] || '').trim();
@@ -1194,11 +1196,11 @@ function renderMonthDetail(rows, monthKey) {
         </div>`)
       .join('') || '<p style="font-size:.82rem;color:#B0A090">No data</p>';
 
-  // Drivers — count per person
+  // Drivers — split by comma (e.g. "Amos, Baraka 1, Baraka 2"), count per driver
   const drvMap = {};
   rows.forEach(r => {
-    const d = (r[COL.driver] || '').trim();
-    if (d) drvMap[d] = (drvMap[d] || 0) + 1;
+    const drivers = (r[COL.driver] || '').split(',').map(d => d.trim()).filter(Boolean);
+    drivers.forEach(d => { drvMap[d] = (drvMap[d] || 0) + 1; });
   });
   document.getElementById('monthly-drivers').innerHTML =
     Object.entries(drvMap)
