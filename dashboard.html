@@ -793,37 +793,19 @@
     <div class="monthly-detail" id="monthly-detail" style="display:none">
       <div class="monthly-detail-header" id="monthly-detail-header"></div>
 
-      <!-- 1. Sessions by type -->
-      <div class="monthly-col" style="border-top:1px solid #E8E0D0;margin:0">
-        <div class="monthly-col-title">Sessions by type</div>
-        <div id="monthly-session-types" class="type-summary-chips"></div>
-      </div>
-
-      <!-- 2. Facilitators & Drivers -->
+      <!-- Facilitators & Drivers -->
       <div class="monthly-detail-grid">
         <div class="monthly-col">
-          <div class="monthly-col-title">Per facilitator — by type</div>
+          <div class="monthly-col-title">Facilitators</div>
           <div id="monthly-facilitators"></div>
         </div>
         <div class="monthly-col">
-          <div class="monthly-col-title">Drivers — trips this month</div>
+          <div class="monthly-col-title">Drivers</div>
           <div id="monthly-drivers"></div>
         </div>
       </div>
 
-      <!-- 3. Age groups -->
-      <div class="monthly-col" style="border-top:1px solid #E8E0D0;margin:0">
-        <div class="monthly-col-title">Who did we reach?</div>
-        <div id="monthly-agegroups" style="display:flex;flex-wrap:wrap;gap:6px;padding-bottom:4px"></div>
-      </div>
-
-      <!-- 4. At a glance -->
-      <div class="monthly-col" style="border-top:1px solid #E8E0D0;margin:0">
-        <div class="monthly-col-title">At a glance</div>
-        <div id="monthly-insights" class="insights-grid"></div>
-      </div>
-
-      <!-- 5. Session list -->
+      <!-- Session list -->
       <div class="monthly-session-list" id="monthly-session-list"></div>
     </div>
 
@@ -1042,9 +1024,24 @@ function renderStats(rows) {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────
+// Parse DD/MM/YYYY or MM/DD/YYYY — assumes DD/MM if day > 12, else DD/MM (European)
+function parseDate(str) {
+  if (!str) return null;
+  const m = (str || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) {
+    const a = parseInt(m[1]), b = parseInt(m[2]), y = parseInt(m[3]);
+    // If first part > 12 it must be the day (DD/MM/YYYY)
+    const day = a > 12 ? a : b;
+    const month = a > 12 ? b : a;
+    return new Date(y, month - 1, day);
+  }
+  const d = new Date(str);
+  return isNaN(d) ? null : d;
+}
+
 function rowMonthKey(r) {
-  const d = new Date(r[COL.date]);
-  if (isNaN(d)) return null;
+  const d = parseDate(r[COL.date]);
+  if (!d || isNaN(d)) return null;
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
@@ -1181,81 +1178,40 @@ function renderMonthDetail(rows, monthKey) {
     </div>
   `;
 
-  // 1. Sessions by type
-  const typeMap = {};
-  rows.forEach(r => {
-    const type = eventTypeLabel(r[COL.project]);
-    typeMap[type] = (typeMap[type] || 0) + 1;
-  });
-  document.getElementById('monthly-session-types').innerHTML =
-    Object.entries(typeMap)
-      .sort((a, b) => b[1] - a[1])
-      .map(([type, count]) =>
-        `<span class="type-summary-chip ${typeSummaryChipClass(type)}">
-          <span class="tsc-count">${count}</span>${type}
-        </span>`
-      ).join('') || '<span style="font-size:.82rem;color:#B0A090">No data</span>';
-
-  // 2. Facilitators — sorted by activity, with event type + hours
+  // Facilitators — count per person
   const facMap = {};
   rows.forEach(r => {
     const f = (r[COL.facilitator] || '').trim();
-    if (!f) return;
-    if (!facMap[f]) facMap[f] = { types: {}, mins: 0 };
-    const type = eventTypeLabel(r[COL.project]);
-    facMap[f].types[type] = (facMap[f].types[type] || 0) + 1;
-    const m = calcDurationMinutes(r[COL.startTime], r[COL.endTime]);
-    if (m) facMap[f].mins += m;
+    if (f) facMap[f] = (facMap[f] || 0) + 1;
   });
   document.getElementById('monthly-facilitators').innerHTML =
-    Object.keys(facMap)
-      .sort((a, b) => Object.values(facMap[b].types).reduce((x,y)=>x+y,0) - Object.values(facMap[a].types).reduce((x,y)=>x+y,0))
-      .map(name => {
-        const { types, mins } = facMap[name];
-        const total = Object.values(types).reduce((a, b) => a + b, 0);
-        const breakdown = Object.entries(types)
-          .map(([t, n]) => `<span class="type-chip">${t}: ${n}</span>`).join('');
-        const hoursStr = mins > 0 ? ` · ${formatDuration(mins)}` : '';
-        return `
-          <div class="person-row" style="flex-direction:column;align-items:flex-start;gap:4px">
-            <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
-              <span class="person-row-name">${name}</span>
-              <span class="person-row-count">${total} session${total !== 1 ? 's' : ''}${hoursStr}</span>
-            </div>
-            <div class="type-chips">${breakdown}</div>
-          </div>`;
-      }).join('') || '<p style="font-size:.82rem;color:#B0A090">No data</p>';
+    Object.entries(facMap)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, n]) => `
+        <div class="person-row">
+          <span class="person-row-name">${name}</span>
+          <span class="person-row-count">${n} session${n !== 1 ? 's' : ''}</span>
+        </div>`)
+      .join('') || '<p style="font-size:.82rem;color:#B0A090">No data</p>';
 
-  // Drivers — with distance category counts
+  // Drivers — count per person
   const drvMap = {};
   rows.forEach(r => {
     const d = (r[COL.driver] || '').trim();
-    if (!d) return;
-    if (!drvMap[d]) drvMap[d] = { short: 0, medium: 0, long: 0, unknown: 0 };
-    drvMap[d][classifyDistance(r[COL.distance])]++;
+    if (d) drvMap[d] = (drvMap[d] || 0) + 1;
   });
   document.getElementById('monthly-drivers').innerHTML =
-    Object.keys(drvMap).sort().map(name => {
-      const c = drvMap[name];
-      const total = c.short + c.medium + c.long + c.unknown;
-      const tags = [
-        c.short   ? `<span class="dist-tag dist-short">Short × ${c.short}</span>`   : '',
-        c.medium  ? `<span class="dist-tag dist-medium">Medium × ${c.medium}</span>` : '',
-        c.long    ? `<span class="dist-tag dist-long">Long × ${c.long}</span>`       : '',
-        c.unknown ? `<span class="dist-tag dist-unknown">? × ${c.unknown}</span>`    : '',
-      ].filter(Boolean).join('');
-      return `
-        <div class="driver-row" style="flex-direction:column;align-items:flex-start;gap:4px">
-          <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
-            <span class="driver-row-name">${name}</span>
-            <span class="person-row-count">${total} trip${total !== 1 ? 's' : ''}</span>
-          </div>
-          <div class="driver-dist-tags" style="justify-content:flex-start">${tags}</div>
-        </div>`;
-    }).join('') || '<p style="font-size:.82rem;color:#B0A090">No data</p>';
+    Object.entries(drvMap)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, n]) => `
+        <div class="person-row">
+          <span class="person-row-name">${name}</span>
+          <span class="person-row-count">${n} trip${n !== 1 ? 's' : ''}</span>
+        </div>`)
+      .join('') || '<p style="font-size:.82rem;color:#B0A090">No data</p>';
 
   // Session list
-  const sorted = [...rows].sort((a, b) => new Date(a[COL.date]) - new Date(b[COL.date]));
+  const sorted = [...rows].sort((a, b) => (parseDate(a[COL.date]) || 0) - (parseDate(b[COL.date]) || 0));
   document.getElementById('monthly-session-list').innerHTML = `
     <div class="msl-header">Sessions this month</div>
     ${sorted.map(r => {
@@ -1267,50 +1223,11 @@ function renderMonthDetail(rows, monthKey) {
             <div class="msl-place">${r[COL.place] || '—'}</div>
             <div class="msl-project">${r[COL.facilitator] || '—'} · ${r[COL.driver] || '—'}</div>
           </span>
-          <span class="msl-driver">${projectBadge(r[COL.project])} ${distTag(r[COL.distance])}</span>
+          <span class="msl-driver">${projectBadge(r[COL.project])}</span>
           <span class="msl-pax">${!isNaN(pax) ? pax + ' pax' : '—'}</span>
         </div>`;
     }).join('')}
   `;
-
-  // Age groups — who did we reach?
-  const ageMap = {};
-  rows.forEach(r => {
-    const ag = (r[COL.ageGroup] || '').trim();
-    const pax = parseInt(r[COL.participants]) || 0;
-    if (ag && pax) ageMap[ag] = (ageMap[ag] || 0) + pax;
-  });
-  document.getElementById('monthly-agegroups').innerHTML =
-    Object.keys(ageMap).length
-      ? Object.entries(ageMap)
-          .sort((a, b) => b[1] - a[1])
-          .map(([ag, n]) => `<span class="type-chip" style="background:#FDF0E8;color:#D4521C">${ag}: <strong>${n.toLocaleString()}</strong></span>`)
-          .join('')
-      : '<span style="font-size:.82rem;color:#B0A090">No age data</span>';
-
-  // 4. At a glance
-  const avgPax = rows.length > 0 ? (totalPax / rows.length).toFixed(1) : '—';
-  const totalMins = rows.reduce((s, r) => s + (calcDurationMinutes(r[COL.startTime], r[COL.endTime]) || 0), 0);
-  const hoursStr = totalMins > 0 ? formatDuration(totalMins) : '—';
-  const locMap = {};
-  rows.forEach(r => { const l = (r[COL.place] || '').trim(); if (l) locMap[l] = (locMap[l] || 0) + 1; });
-  const topLoc = Object.entries(locMap).sort((a, b) => b[1] - a[1])[0];
-  const followupCount = rows.filter(r => {
-    const f = (r[COL.followup] || '').toLowerCase();
-    return f && f !== 'no' && f !== 'nee' && f !== '0';
-  }).length;
-  const insights = [
-    { label: 'Avg per session', value: avgPax + ' pax' },
-    { label: 'Total hours', value: hoursStr },
-    { label: 'Top location', value: topLoc ? topLoc[0] : '—' },
-    { label: 'Follow-ups', value: followupCount === 0 ? 'None' : followupCount },
-  ];
-  document.getElementById('monthly-insights').innerHTML =
-    insights.map(({ label, value }) => `
-      <div class="insight-item">
-        <div class="insight-value">${value}</div>
-        <div class="insight-label">${label}</div>
-      </div>`).join('');
 
   document.getElementById('monthly-detail').style.display = 'block';
 }
@@ -1391,8 +1308,8 @@ function getFilteredRows() {
   }
 
   return allRows.filter(r => {
-    const d = new Date(r[COL.date]);
-    if (isNaN(d)) return false;
+    const d = parseDate(r[COL.date]);
+    if (!d || isNaN(d)) return false;
     if (from && d < from) return false;
     if (to   && d > to)   return false;
     return true;
