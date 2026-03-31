@@ -1532,8 +1532,9 @@ function buildPersonCard(name, rows, role, crossRoleSet) {
 }
 
 // ── Google Sheets live data ──────────────────────────────────────────
-const SHEET_ID = '1qydD6FY7sJ0_w2Hwpmn5tEyIO1Duo8jSsEqA_dBCuBs';
-const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
+const SHEET_ID = '1h822_zOALfUyso877giFT0b93CRh4_9yG18qY2I-SbU';
+const SHEET_GID = '1554436643';
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${SHEET_GID}`;
 
 function setStatus(msg) {
   document.getElementById('last-updated').textContent = msg;
