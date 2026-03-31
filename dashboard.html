@@ -774,6 +774,7 @@
     <div class="card"><div class="value" id="stat-participants">—</div><div class="label">People reached</div></div>
     <div class="card"><div class="value" id="stat-facilitators">—</div><div class="label">Facilitators</div></div>
     <div class="card"><div class="value" id="stat-hours">—</div><div class="label">Hours delivered</div></div>
+    <div class="card"><div class="value" id="stat-km">—</div><div class="label">Km driven</div></div>
     <div class="card"><div class="value" id="stat-followup">—</div><div class="label">Follow-ups</div></div>
   </div>
 
@@ -990,11 +991,16 @@ function renderStats(rows) {
     ? (Math.floor(totalMins / 60) + 'h' + (totalMins % 60 > 0 ? ' ' + (totalMins % 60) + 'm' : ''))
     : '—';
 
+  // Total km driven
+  let totalKm = 0;
+  rows.forEach(r => { totalKm += parseInt(r[COL.distance]) || 0; });
+
   // Stat cards
   document.getElementById('stat-sessions').textContent = rows.length;
   document.getElementById('stat-participants').textContent = totalParticipants.toLocaleString();
   document.getElementById('stat-facilitators').textContent = facilitators.size;
   document.getElementById('stat-hours').textContent = totalHours;
+  document.getElementById('stat-km').textContent = totalKm > 0 ? totalKm.toLocaleString() + ' km' : '—';
   document.getElementById('stat-followup').textContent = followups.length;
 
   // Impact banner
@@ -1190,19 +1196,24 @@ function renderMonthDetail(rows, monthKey) {
         </div>`)
       .join('') || '<p style="font-size:.82rem;color:#B0A090">No data</p>';
 
-  // Drivers — split by comma (e.g. "Amos, Baraka 1, Baraka 2"), count per driver
+  // Drivers — split by comma, count trips and sum km per driver
   const drvMap = {};
   rows.forEach(r => {
     const drivers = (r[COL.driver] || '').split(',').map(d => d.trim()).filter(Boolean);
-    drivers.forEach(d => { drvMap[d] = (drvMap[d] || 0) + 1; });
+    const km = parseInt(r[COL.distance]) || 0;
+    drivers.forEach(d => {
+      if (!drvMap[d]) drvMap[d] = { trips: 0, km: 0 };
+      drvMap[d].trips++;
+      drvMap[d].km += km;
+    });
   });
   document.getElementById('monthly-drivers').innerHTML =
     Object.entries(drvMap)
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, n]) => `
+      .sort((a, b) => b[1].trips - a[1].trips)
+      .map(([name, { trips, km }]) => `
         <div class="person-row">
           <span class="person-row-name">${name}</span>
-          <span class="person-row-count">${n} trip${n !== 1 ? 's' : ''}</span>
+          <span class="person-row-count">${trips} trip${trips !== 1 ? 's' : ''}${km > 0 ? ' · ' + km + ' km' : ''}</span>
         </div>`)
       .join('') || '<p style="font-size:.82rem;color:#B0A090">No data</p>';
 
