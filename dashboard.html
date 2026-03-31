@@ -947,10 +947,12 @@ function parseAndRender(raw) {
 
   const lines = raw.trim().split(/\r?\n/).map(parseLine);
 
-  // Skip header row(s): detect by checking if first column looks like a date/timestamp
+  // Skip header row: keep all rows where the first column contains a digit
+  // (catches any date format: "3/31/2026", "2026-03-31", "Date(2026,2,31)", etc.)
   const rows = lines.filter(r => {
-    const first = r[COL.timestamp] || '';
-    return /\d{1,2}\/\d{1,2}\/\d{4}/.test(first);
+    if (r.length < 3) return false;
+    const first = (r[COL.timestamp] || '').trim();
+    return /\d/.test(first) && !/^(timestamp|tijdstempel)/i.test(first);
   });
 
   if (rows.length === 0) {
@@ -1534,7 +1536,7 @@ function buildPersonCard(name, rows, role, crossRoleSet) {
 // ── Google Sheets live data ──────────────────────────────────────────
 const SHEET_ID = '1h822_zOALfUyso877giFT0b93CRh4_9yG18qY2I-SbU';
 const SHEET_GID = '1554436643';
-const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${SHEET_GID}`;
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
 
 function setStatus(msg) {
   document.getElementById('last-updated').textContent = msg;
