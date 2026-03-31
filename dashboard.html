@@ -922,7 +922,30 @@ function handleFile(event) {
 function parseAndRender(raw) {
   // Auto-detect separator (tab or comma)
   const sep = raw.includes('\t') ? '\t' : ',';
-  const lines = raw.trim().split('\n').map(l => l.split(sep).map(c => c.trim().replace(/^"|"$/g, '')));
+
+  // Proper CSV/TSV parser — handles quoted fields containing the separator or newlines
+  function parseLine(line) {
+    if (sep === '\t') return line.split('\t').map(c => c.trim());
+    const fields = [];
+    let field = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') { field += '"'; i++; } // escaped quote
+        else inQuotes = !inQuotes;
+      } else if (ch === sep && !inQuotes) {
+        fields.push(field.trim());
+        field = '';
+      } else {
+        field += ch;
+      }
+    }
+    fields.push(field.trim());
+    return fields;
+  }
+
+  const lines = raw.trim().split(/\r?\n/).map(parseLine);
 
   // Skip header row(s): detect by checking if first column looks like a date/timestamp
   const rows = lines.filter(r => {
